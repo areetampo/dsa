@@ -53,7 +53,7 @@
   },
   "editor.hover.delay": 300,
   "editor.hover.sticky": true,
-  "editor.scrollbar.verticalScrollbarSize": 30,
+  "editor.scrollbar.verticalScrollbarSize": 40,
   "editor.scrollbar.horizontalScrollbarSize": 30,
   "editor.scrollbar.vertical": "visible",
   "editor.scrollbar.horizontal": "visible",
