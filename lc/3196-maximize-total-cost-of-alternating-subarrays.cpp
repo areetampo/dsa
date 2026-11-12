@@ -3,7 +3,7 @@ public:
     long long maximumTotalCost(vector<int>& v) {
         //house robber dp on seq of -ve elements
         //cannot make 2 consecutive elements +ve
-        //if there's a +ve element in front of a -ve sequence, first -ve can 
+        //if there's a +ve element in front of a -ve sequence, first -ve can
         //become +ve otherwise stays -ve (if -ve seq at start of arr)
         long long res = 0; int n = v.size();
         for (int i = 0, j; i < n; i = j) {
@@ -24,7 +24,7 @@ public:
             for (int k = 2; k < dp.size(); k++) {
                 dp[k] = min(dp[k - 1], v[i + k] + dp[k - 2]);
             }
-            res += accumulate(v.begin() + i, v.begin() + j, 0ll) + 
+            res += accumulate(v.begin() + i, v.begin() + j, 0ll) +
                 2 * abs(dp.back());
             // cout << i << " " << j << " " << res << "\n";
         }
@@ -32,7 +32,7 @@ public:
     }
 };
 //greedy approach fails at [4,-5,-3,-2,-4,4]
-// int n = v.size(); 
+// int n = v.size();
 // long long res = 0;
 // for (int i = 0; i < n; i++) {
 //     if (v[i] >= 0) res += v[i];
@@ -48,7 +48,7 @@ public:
 //         if (i == 0) {
 //             //arr starts with -ve elements
 //             //so all the -ve element's absolute vals end up as
-//             //- - + - + ... or - + - + - + ... opposed to 
+//             //- - + - + ... or - + - + - + ... opposed to
 //             //- + - + ... or + - + - ... when there is a +ve element before
 //             //now b will always contain the first elemnent since for
 //             //(j - i) % 2 == 0, the abs val gets added to b at i = j
