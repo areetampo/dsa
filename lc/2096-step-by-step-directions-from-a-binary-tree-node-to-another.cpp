@@ -29,7 +29,7 @@ public:
     //FOUND
     //now suppose if both left and right subtree return strings then the curr node
     //is lca and the path is complete by string src->lca + rev(lca->des)
-    //both_found check otherwise returned strings will keep having x or U being 
+    //both_found check otherwise returned strings will keep having x or U being
     //added to even if src to dest path built
     int both_found = 0;
     string* dfs(TreeNode* curr, int src, int des) {
@@ -51,7 +51,7 @@ public:
                 l->back() = 'L';
                 reverse(l->begin(), l->end());////up to down seq (curr to des)
                 *r += *l;
-                return r; 
+                return r;
             }
             //right subtree has des node
             r->back() = 'R';
