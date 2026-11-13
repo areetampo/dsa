@@ -401,52 +401,145 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * ============================================================================
+ *  Count subarrays that can be made non-decreasing with <= k +1 operations
+ * ============================================================================
+ *
+ * PROBLEM RESTATED
+ *   For every subarray, we may add +1 to elements (at most k times in total).
+ *   Count the subarrays that can become non-decreasing.
+ *
+ * STEP 1: COST OF ONE SUBARRAY
+ *   Elements can only increase, so the cheapest fix is to raise each element
+ *   to the running (prefix) maximum seen so far in the subarray:
+ *
+ *       cost(l..r) = sum over idx in [l..r] of ( max(a[l..idx]) - a[idx] )
+ *
+ *   The subarray is good iff cost <= k.
+ *
+ * STEP 2: COUNT BAD SUBARRAYS INSTEAD
+ *   Badness is monotone: if [i..j] is bad, every superset [i'..j'] with
+ *   i' <= i and j' >= j is bad too (extra elements never lower the cost).
+ *   So we sweep j (right end) and keep a window start i, and whenever
+ *   [i..j] is bad we know start i is bad for ALL ends j..n-1, i.e. n - j
+ *   subarrays. Then we move i forward and re-check. Answer = total - bad.
+ *
+ * STEP 3: MAINTAINING cost(i..j) AS THE WINDOW MOVES
+ *   Group the window into "records": indices that are strict prefix maxima.
+ *   Each record owns a segment (itself plus everything up to the next record).
+ *   Every element in a segment is raised to that record's value, so
+ *
+ *       segment cost = a[rec] * len - (sum of the segment)
+ *
+ *   and the window cost is the sum of all segment costs (kept in `running`).
+ *   The deque stores (record index, segment cost). Records have increasing
+ *   values from window start to the right, so:
+ *       dq.back()  = record at the window start i (oldest, leftmost)
+ *       dq.front() = newest record (rightmost, the one j currently belongs to)
+ *
+ *   Moving j right (push):
+ *     - a[j] > front value : j becomes a new record with cost 0.
+ *     - otherwise          : j joins the front record's segment and adds
+ *                            (front value - a[j]) to its cost and to running.
+ *     Nothing else changes, since earlier elements' prefix max is unaffected.
+ *
+ *   Moving i right (pop), the tricky part:
+ *     When the record at i leaves, the elements in its segment were measured
+ *     against a[i]. Now they have a smaller prefix max, so their costs change.
+ *     The segment is NOT necessarily sorted, so we can't just drop its cost.
+ *     Instead, inside the old segment [i+1 .. r] the new records are the chain
+ *         i+1 -> nextGreater(i+1) -> nextGreater(...) -> ... (stopping at r)
+ *     We remove the old segment cost and add the cost of each new record's
+ *     segment. The next record after the old segment (value > a[i]) is
+ *     bigger than everything in it, so it and everything past it is unchanged.
+ *
+ * STEP 4: WHY THIS IS O(n)
+ *   Whether an index is a record depends only on elements between the window
+ *   start and it. As i only moves right, that range only shrinks, so a record
+ *   never stops being a record until i passes it. So each index is pushed as
+ *   a record at most once and exposed at most once, and finding the chain
+ *   uses the precomputed next-greater array (one jump per new record), with
+ *   prefix sums giving each segment's sum in O(1).
+ *
+ * COMPLEXITY: O(n) time, O(n) space.
+ * ============================================================================
+ */
 class Solution {
   public:
   long long countNonDecreasingSubarrays(vector<int>& a, int k) {
     i64 n = sz(a);
 
-    vi ng(n, -1), st;
-    fr(i, n, 0) {
+    // ng[x] = index of the next element STRICTLY greater than a[x] (n if none).
+    // Used to hop from one record to the next inside an exposed segment.
+    vi ng(n, n), st;
+    fr(i, n - 1, 0) {
       while (!st.empty() && a[st.back()] <= a[i]) st.pop_back();
       if (!st.empty()) ng[i] = st.back();
+      st.pb(i);
     }
 
+    // Prefix sums so any segment sum is O(1).
     vi ps = { a[0] };
     fo(i, 1, n) ps.pb(ps.back() + a[i]);
 
-    auto rs = [&] (int l, int r) -> i64 {
+    // rs(l, r) = a[l] + ... + a[r]
+    auto rs = [&] (i64 l, i64 r) -> i64 {
       return ps[r] - (l == 0 ? 0 : ps[l - 1]);
     };
 
+    // dq of (record index, cost of that record's segment).
+    // front = newest/rightmost record, back = record at window start i.
     deque<pii> dq;
-    i64 running = 0, bad = 0;
+    i64 running = 0;  // current cost of window [i..j] = sum of all .ss in dq
+    i64 bad = 0;      // number of subarrays that can NOT be fixed
 
-    for (int i = 0, j = 0; j < n; j++) {
+    for (i64 i = 0, j = 0; j < n; j++) {
+      // ---- extend window to include j ----
       if (dq.empty() || a[dq.front().ff] < a[j])
-        dq.push_front({ j, 0 });
-      i64 diff = a[dq.front().ff] - a[j];
-      dq.front().ss += diff;
+        dq.push_front({ j, 0 });                 // new prefix max, costs nothing
+      i64 diff = a[dq.front().ff] - a[j];        // 0 if j was just made a record
+      dq.front().ss += diff;                     // j joins the newest segment
       running += diff;
 
+      // ---- shrink from the left while [i..j] is bad ----
       while (running > k) {
-        running -= dq.back().ss;
-        int l = dq.back().ff + 1;
-        dq.pop_back();
-        int r = dq.empty() ? j - 1 : dq.back().ff - 1;
-
-        if (l > r) break;
+        // Start i is bad with every end in [j, n-1].
         bad += n - j;
 
-        int x = l;
-        while (x <= r) {
-          
+        // Remove the record at i together with its whole segment cost.
+        running -= dq.back().ss;
+        i64 l = dq.back().ff + 1;                // first element of old segment, minus i
+        dq.pop_back();
+        // Old segment ends just before the next record (or at j if none).
+        i64 r = dq.empty() ? j : dq.back().ff - 1;
+
+        // Expose the new records hidden under i: walk the next-greater chain
+        // from l, clamping each segment so it doesn't pass r.
+        deque<pii> t;
+        i64 range_s = l;
+        while (range_s <= r) {
+          i64 range_e = min(ng[range_s] - 1, r);
+          i64 range_len = range_e - range_s + 1;
+          i64 cost = (i64)a[range_s] * range_len - rs(range_s, range_e);
+          t.push_front({ range_s, cost });       // front ends up as the rightmost
+          running += cost;
+          range_s = range_e + 1;
         }
 
-        i++;
+        // Append to the back of dq so that leftmost new record (i+1) ends up
+        // at dq.back(), and values stay increasing from back toward front...
+        // (t.front() is the rightmost, so it is attached next to the old neighbor).
+        while (!t.empty()) {
+          dq.pb(t.front());
+          t.pop_front();
+        }
+
+        i++;  // window start moves right
       }
     }
 
+    // total subarrays minus the unfixable ones
     return n * (n + 1) / 2 - bad;
   }
 };
