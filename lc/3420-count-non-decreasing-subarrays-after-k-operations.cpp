@@ -433,24 +433,14 @@ class Solution {
         running -= dq.back().ss;
         int l = dq.back().ff + 1;
         dq.pop_back();
-        int r = dq.empty() ? -1 : dq.back().ff - 1;
+        int r = dq.empty() ? j - 1 : dq.back().ff - 1;
 
         if (l > r) break;
         bad += n - j;
 
-        deque<pii> t;
-
-        fo(x, l, r + 1) {
-          if (t.empty() || a[t.front().ff] < a[x])
-            t.push_front({ x, 0 });
-          i64 diff = a[t.front().ff] - a[x];
-          t.front().ss += diff;
-          running += diff;
-        }
-
-        while (!t.empty()) {
-          dq.push_back(t.front());
-          t.pop_front();
+        int x = l;
+        while (x <= r) {
+          
         }
 
         i++;
