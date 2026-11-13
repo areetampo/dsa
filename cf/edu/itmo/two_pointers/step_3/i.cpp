@@ -299,7 +299,7 @@ using Mint2 = ModInt<998'244'353>;
 /********************************************************/
 /* Entry                                                */
 /********************************************************/
-constexpr bool MULTI = true;
+constexpr bool MULTI = 0;
 int TC_TOTAL = 1, TC_CUR = 0;
 
 inline void precomp() {
@@ -307,7 +307,57 @@ inline void precomp() {
 }
 
 inline void solve() {
+  i64 n, s; cin >> n >> s;
+  vi a = iv(n);
 
+  /*
+  Shortest segment containing a subset with sum s.
+
+  1. Monotone: if [l, r] is good, any segment containing it is good.
+    So for each right end r we want the LARGEST l that still works.
+
+  2. A subset's "cost" is its leftmost chosen index. A segment must cover
+    every chosen element, so the best (shortest) segment for that subset
+    starts exactly at its leftmost index. Larger leftmost = shorter segment.
+
+  3. State: dp[x] = max over subsets of a[0..i] with sum x of (leftmost index).
+    One number per sum is enough, because among subsets with the same sum
+    only the one with the latest leftmost index can give a shorter segment.
+
+  4. Transition when a[i] arrives (0/1 knapsack):
+      - extend: subset (sum j) + a[i] -> sum j + a[i]. Adding the newest
+        index i never lowers the leftmost index, so just copy:
+            dp[j + a[i]] = max(dp[j + a[i]], dp[j])
+      - start fresh: subset {a[i]} alone has leftmost index i (the
+        largest so far, so it always wins):
+            dp[a[i]] = i
+
+  5. Order matters: loop j downward so every read sees values from before
+    step i (a[i] is used at most once), and stamp dp[a[i]] = i AFTER the
+    loop so the fresh {a[i]} isn't extended by a[i] again.
+
+  6. After processing i, if dp[s] is set, [dp[s], i] is a good segment
+    of length i - dp[s] + 1. Take the minimum over all i.
+
+  Complexity: O(n * s).
+  */
+
+  vi dp(s + 1, -INF);
+
+  i64 res = n + 1;
+
+  fo(i, 0, n) {
+   // extend existing sums (j >= 1), downward so a[i] is used once
+    for (int j = s - a[i]; j >= 1; j--) {
+      if (dp[j] == -INF) continue;
+      dp[j + a[i]] = max(dp[j + a[i]], dp[j]); // keeps old leftmost index
+    }
+    dp[a[i]] = i; // subset {a[i]} alone; i is the largest index, so it wins
+
+    if (dp[s] != -INF) res = min(res, i - dp[s] + 1);
+  }
+
+  cout << (res == n + 1 ? -1 : res) << "\n";
 }
 
 int main() {

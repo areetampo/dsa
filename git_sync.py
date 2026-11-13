@@ -10,6 +10,11 @@ What it does on each run:
   * Skips a tracked file that has just become blank (probably a mistake; the
     old version stays in GitHub).
   * Skips files modified in the last 60 seconds (still being written/saved).
+  * Respects .gitignore: if you add a folder that is already on GitHub (say
+    "tests") to .gitignore, it stops tracking those files automatically. They
+    stay on your PC and in git history, they just leave the current repo.
+  * If git refuses one file, that file is reported in the log and everything
+    else still goes through.
   * Scans every file it is about to upload for secrets (cookies, tokens, API
     keys, private keys). A file that looks like it has one is NOT uploaded.
   * Commits, then pushes. If you are offline the commit stays local and the
@@ -107,18 +112,13 @@ def trim_log(path):
 # --------------------------------------------------------------------------
 
 
-def git(repo, *args, input_bytes=None, timeout=GIT_TIMEOUT):
+def git(repo, *args, input_bytes=None, timeout=GIT_TIMEOUT, literal=True):
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never")
+    base = ["git", "-c", "core.quotepath=false"]
+    if literal:  # file names like "a[1].cpp" must not be treated as patterns
+        base.append("--literal-pathspecs")
     p = subprocess.run(
-        [
-            "git",
-            "-c",
-            "core.quotepath=false",
-            "--literal-pathspecs",
-            "-C",
-            str(repo),
-            *args,
-        ],
+        [*base, "-C", str(repo), *args],
         input=input_bytes,
         capture_output=True,
         timeout=timeout,
@@ -212,6 +212,83 @@ def scan_for_secrets(repo, paths):
                 blocked[path] = reason
                 break
     return blocked
+
+
+def tracked_but_ignored(repo):
+    """Tracked files that now match .gitignore (e.g. a folder you added to it later)."""
+    rc, out, _ = git(repo, "ls-files", "-z", "-ci", "--exclude-standard")
+    if rc != 0:
+        return []
+    return [p for p in out.split("\0") if p]
+
+
+def untrack(repo, paths):
+    """Remove files from the repo index only (they stay on disk and in history)."""
+    payload = b"\0".join(p.encode("utf-8") for p in paths) + b"\0"
+    rc, out, err = git(
+        repo,
+        "rm",
+        "--cached",
+        "-q",
+        "--ignore-unmatch",
+        "--pathspec-from-file=-",
+        "--pathspec-file-nul",
+        input_bytes=payload,
+    )
+    return "" if rc == 0 else short_error(err or out)
+
+
+def ignored_among(repo, paths):
+    """Subset of paths that match .gitignore rules (tracked or not)."""
+    if not paths:
+        return set()
+    payload = b"\0".join(p.encode("utf-8") for p in paths) + b"\0"
+    # check-ignore does not accept --literal-pathspecs (it takes plain paths anyway)
+    rc, out, _ = git(
+        repo,
+        "check-ignore",
+        "-z",
+        "--stdin",
+        "--no-index",
+        input_bytes=payload,
+        literal=False,
+    )
+    if rc not in (0, 1):
+        return set()
+    return {p for p in out.split("\0") if p}
+
+
+def short_error(text):
+    """One-line git error without the 'hint:' chatter."""
+    lines = [
+        l.strip() for l in text.splitlines() if l.strip() and not l.startswith("hint:")
+    ]
+    return " ".join(lines)[:300]
+
+
+def stage(repo, paths):
+    """
+    git add the given paths. If the batch is refused, retry one by one so a
+    single bad path can never block everything else. Returns {path: reason}
+    for the files that could not be staged.
+    """
+    payload = b"\0".join(p.encode("utf-8") for p in paths) + b"\0"
+    rc, out, err = git(
+        repo,
+        "add",
+        "-A",
+        "--pathspec-from-file=-",
+        "--pathspec-file-nul",
+        input_bytes=payload,
+    )
+    if rc == 0:
+        return {}
+    failed = {}
+    for p in paths:
+        rc, out, err = git(repo, "add", "-A", "--", p)
+        if rc != 0:
+            failed[p] = short_error(err or out)
+    return failed
 
 
 def staged_summary(repo):
@@ -351,8 +428,27 @@ def run(repo=REPO, dry_run=False, settle=SETTLE_SECONDS, push=True):
 
 
 def _sync(repo, dry_run, settle, push, result):
+    # Tracked files that now match .gitignore (a folder you ignored later):
+    # stop tracking them. They stay on your PC and in git history.
+    stale = tracked_but_ignored(repo)
+    result["untracked"] = len(stale)
+    if stale and not dry_run:
+        problem = untrack(repo, stale)
+        if problem:
+            log(f"Could not stop tracking ignored files: {problem}")
+            result["errors"].append("untrack failed")
+        else:
+            log(
+                f"Stopped tracking {len(stale)} file(s) that are now in .gitignore "
+                "(still on your PC and in git history)."
+            )
+
     entries = pending_changes(repo)
     upload, skipped = classify(repo, entries, settle)
+    hidden = ignored_among(repo, upload)
+    if hidden:
+        upload = [p for p in upload if p not in hidden]
+        skipped["ignored"] = skipped.get("ignored", 0) + len(hidden)
     blocked = scan_for_secrets(repo, upload)
     upload = [p for p in upload if p not in blocked]
     skipped = {k: v for k, v in skipped.items() if v}
@@ -367,6 +463,10 @@ def _sync(repo, dry_run, settle, push, result):
         log(f"BLOCKED (looks like a secret: {reason}): {path}")
 
     if dry_run:
+        if stale:
+            print(
+                f"Would stop tracking {len(stale)} file(s) that are now in .gitignore."
+            )
         print(f"Would commit {len(upload)} file(s).")
         for p in upload[:40]:
             print(f"  {p}")
@@ -377,30 +477,25 @@ def _sync(repo, dry_run, settle, push, result):
         return
 
     if upload:
-        payload = b"\0".join(p.encode("utf-8") for p in upload) + b"\0"
-        rc, out, err = git(
-            repo,
-            "add",
-            "-A",
-            "--pathspec-from-file=-",
-            "--pathspec-file-nul",
-            input_bytes=payload,
-        )
-        if rc != 0:
-            raise RuntimeError(f"git add failed: {err.strip()[:300]}")
+        failed = stage(repo, upload)
+        for path, why in failed.items():
+            log(f"Could not stage {path}: {why}")
+        if failed:
+            result["errors"].append(f"could not stage {len(failed)} file(s)")
 
-        changes = staged_summary(repo)
-        if changes:
-            title, body = commit_message(changes)
-            rc, out, err = git(repo, "commit", "-q", "-m", title, "-m", body)
-            if rc != 0:
-                msg = (err or out).strip()
-                if "tell me who you are" in msg or "user.email" in msg:
-                    msg = "git has no name/email set. Run git_setup.py again."
-                raise RuntimeError(f"git commit failed: {msg[:300]}")
-            result["committed"] = len(changes)
-            result["changes"] = changes
-            log(f"Committed: {title}")
+    # Commit whatever is staged (this also covers removals from untracking).
+    changes = staged_summary(repo)
+    if changes:
+        title, body = commit_message(changes)
+        rc, out, err = git(repo, "commit", "-q", "-m", title, "-m", body)
+        if rc != 0:
+            msg = (err or out).strip()
+            if "tell me who you are" in msg or "user.email" in msg:
+                msg = "git has no name/email set. Run git_setup.py again."
+            raise RuntimeError(f"git commit failed: {msg[:300]}")
+        result["committed"] = len(changes)
+        result["changes"] = changes
+        log(f"Committed: {title}")
 
     if skipped and result["committed"]:
         log("Not included: " + ", ".join(f"{v} {k}" for k, v in skipped.items()))
