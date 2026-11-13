@@ -404,6 +404,59 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   long long countNonDecreasingSubarrays(vector<int>& a, int k) {
+    i64 n = sz(a);
 
+    vi ng(n, -1), st;
+    fr(i, n, 0) {
+      while (!st.empty() && a[st.back()] <= a[i]) st.pop_back();
+      if (!st.empty()) ng[i] = st.back();
+    }
+
+    vi ps = { a[0] };
+    fo(i, 1, n) ps.pb(ps.back() + a[i]);
+
+    auto rs = [&] (int l, int r) -> i64 {
+      return ps[r] - (l == 0 ? 0 : ps[l - 1]);
+    };
+
+    deque<pii> dq;
+    i64 running = 0, bad = 0;
+
+    for (int i = 0, j = 0; j < n; j++) {
+      if (dq.empty() || a[dq.front().ff] < a[j])
+        dq.push_front({ j, 0 });
+      i64 diff = a[dq.front().ff] - a[j];
+      dq.front().ss += diff;
+      running += diff;
+
+      while (running > k) {
+        running -= dq.back().ss;
+        int l = dq.back().ff + 1;
+        dq.pop_back();
+        int r = dq.empty() ? -1 : dq.back().ff - 1;
+
+        if (l > r) break;
+        bad += n - j;
+
+        deque<pii> t;
+
+        fo(x, l, r + 1) {
+          if (t.empty() || a[t.front().ff] < a[x])
+            t.push_front({ x, 0 });
+          i64 diff = a[t.front().ff] - a[x];
+          t.front().ss += diff;
+          running += diff;
+        }
+
+        while (!t.empty()) {
+          dq.push_back(t.front());
+          t.pop_front();
+        }
+
+        i++;
+      }
+    }
+
+    return n * (n + 1) / 2 - bad;
   }
 };
