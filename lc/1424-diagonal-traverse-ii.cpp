@@ -401,3 +401,31 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  vector<int> findDiagonalOrder(vector<vector<int>>& g) {
+    int n = sz(g);
+
+    vector<int> res;
+    queue<pii> q;
+
+    q.push({ 0, 0 });
+
+    while (!q.empty()) {
+      auto [i, j] = q.front();
+      q.pop();
+
+      res.pb(g[i][j]);
+
+      // start the next diagonal
+      if (j == 0 && i + 1 < n)
+        q.push({ i + 1, 0 });
+
+      // continue current diagonal
+      if (j + 1 < g[i].size())
+        q.push({ i, j + 1 });
+    }
+
+    return res;
+  }
+};
