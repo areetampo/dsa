@@ -100,8 +100,9 @@ template <class T> void print_fp(T x, int precision = 15) {
 #define allr(x) (x).rbegin(), (x).rend()
 
 /********************************************************/
-/* Debug (stderr, compiled out unless -DLOCAL)          */
+/* Debug (stderr, compiled out if DEBUG_MODE is 0)      */
 /********************************************************/
+// stack, queue print oldest on the left, newest on the right; deque prints back on the left, front on the right; pq, pqg print with top on the right
 #define DEBUG_MODE 1
 #if DEBUG_MODE
 template <class T> struct is_pair : false_type {};
@@ -109,6 +110,8 @@ template <class A, class B> struct is_pair<pair<A, B>> : true_type {};
 template <class T> struct is_tuple : false_type {};
 template <class... A> struct is_tuple<tuple<A...>> : true_type {};
 template <class T> struct is_adapter : false_type {};
+template <class T> struct is_deque : false_type {};
+template <class T, class A> struct is_deque<deque<T, A>> : true_type {};
 template <class T> struct is_queue : false_type {};
 template <class T, class C> struct is_queue<queue<T, C>> : true_type {};
 template <class T, class C> struct is_adapter<stack<T, C>> : true_type {};
@@ -145,6 +148,9 @@ template <class T> void _print(const T& x) {
     T c = x; vector<decay_t<decltype(_top(c))>> v;
     while (!c.empty()) { v.push_back(_top(c)); c.pop(); }
     if constexpr (!is_queue<T>::value) reverse(all(v));
+    _print(v);
+  } else if constexpr (is_deque<T>::value) {
+    vector<typename T::value_type> v(x.rbegin(), x.rend());
     _print(v);
   } else if constexpr (is_iter<T>::value) {
     cerr << "["; bool first = true;
