@@ -403,29 +403,25 @@ static const int _fast_io = [] () {
 
 class Solution {
   public:
-  vector<int> findDiagonalOrder(vector<vector<int>>& g) {
-    int n = sz(g);
+  vector<int> findDiagonalOrder(vector<vector<int>>& nums) {
+    map<int, vi> groups;
+    fr(i, sz(nums) - 1, 0) {
+      fo(j, 0, sz(nums[i])) {
+        groups[i + j].pb(nums[i][j]);
+      }
+    }
 
     vector<int> res;
-    queue<pii> q;
+    int g = 0;
 
-    q.push({ 0, 0 });
-
-    while (!q.empty()) {
-      auto [i, j] = q.front();
-      q.pop();
-
-      res.pb(g[i][j]);
-
-      // start the next diagonal
-      if (j == 0 && i + 1 < n)
-        q.push({ i + 1, 0 });
-
-      // continue current diagonal
-      if (j + 1 < g[i].size())
-        q.push({ i, j + 1 });
+    while (groups.find(g) != groups.end()) {
+      trav(i, groups[g]) {
+        res.pb(i);
+      }
+      g++;
     }
 
     return res;
   }
 };
+
