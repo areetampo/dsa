@@ -139,7 +139,7 @@ template <class T> void _print(const T& x) {
     while (y > 0) { s += char('0' + (int)(y % 10)); y /= 10; }
     if (neg) s += '-';
     reverse(all(s)); cout << s;
-}
+  }
 #endif
   else if constexpr (is_pair<T>::value) {
     cout << "{"; _print(x.first); cout << ", "; _print(x.second); cout << "}";
@@ -424,14 +424,28 @@ class Solution {
 
       ps += a[i];
 
-      if (!dq.empty()) {
-        smin(res, ps - dq.back().ss);
+      // back -> front: idx inc, vals dec
+      // i - back's idx <= r, cannot take if its < l
+      if (!dq.empty() && i - dq.back().ff >= l) {
+        // subarr sum > 0: ps > found
+        // dq front -> back: second values ascending (3 4 5 6)
+        auto it = lower_bound(dq.begin(), dq.end(), ps,
+          [] (const auto& p, int v) { return p.second < v; });
+        // lower_bound: first element with second >= ps
+
+        if (it != dq.begin()) {
+          --it; // largest element with second < ps
+          smin(res, ps - it->ss);
+        }
+        // else: no element with second < ps
       }
 
       while (!dq.empty() && dq.front().ss <= ps) {
         dq.pop_front();
       }
       dq.push_front({ i, ps });
+
+      dbg(dq);
     }
 
     return res == imax ? -1 : res;
