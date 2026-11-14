@@ -427,17 +427,23 @@ class Solution {
       // back -> front: idx inc, vals dec
       // i - back's idx <= r, cannot take if its < l
       if (!dq.empty() && i - dq.back().ff >= l) {
-        // subarr sum > 0: ps > found
-        // dq front -> back: second values ascending (3 4 5 6)
-        auto it = lower_bound(dq.begin(), dq.end(), ps,
-          [] (const auto& p, int v) { return p.second < v; });
-        // lower_bound: first element with second >= ps
+        // back -> front {idx, val}
+        // {1,6} {2,5} {3,4} {4,3}
+        // note: dq front->back is read by .begin->.end
 
-        if (it != dq.begin()) {
-          --it; // largest element with second < ps
+        // start of the valid range: first element with i - first >= l
+        auto st = partition_point(all(dq),
+          [&] (const auto& p) { return i - p.first < l; });
+
+        // found < ps for subarr sum > 0, restricted to [st, end)
+        auto it = lower_bound(st, dq.end(), ps,
+          [] (const auto& p, int v) { return p.second < v; });
+
+        if (it != st) {
+          --it; // largest second < ps within the range
           smin(res, ps - it->ss);
         }
-        // else: no element with second < ps
+        // else: nothing valid (range empty, or every second >= ps)
       }
 
       while (!dq.empty() && dq.front().ss <= ps) {
