@@ -403,10 +403,12 @@ class Solution {
   int maxHeight(vector<vector<int>>& a) {
     int n = sz(a);
 
+    trav(i, a) sort(all(i));
     sort(all(a));
+    dbg(a);
 
     vector<int> dp(n, 0);
-    dp[0] = a[0][2]; // loop run starts at j = 1 considering any prev and adding to j = 1's ht
+    fo(i, 0, n) dp[i] = a[i][2]; // or can do lee's approach by adding {0,0,0} to a and each will have atleast its ht recorded
 
     fo(j, 0, n) {
       fo(i, 0, j) {
