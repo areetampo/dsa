@@ -406,32 +406,90 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * PROBLEM
+ * Find the minimum POSITIVE subarray sum among subarrays whose length is in [l, r].
+ * Return -1 if none exists.
+ *
+ * KEY IDEA: PREFIX SUMS
+ * Let ps[0] = 0 and ps[k] = a[0] + ... + a[k-1].
+ * Then sum(a[j..idx-1]) = ps[idx] - ps[j].
+ * So a subarray is described by a pair (j, idx) of prefix indices, and its length is idx - j.
+ *
+ * FIXING THE RIGHT END
+ * Fix idx (the prefix index where the subarray ends, i.e. the last element is a[idx-1]).
+ * The length constraint l <= idx - j <= r gives:
+ *      idx - r <= j <= idx - l          (and j >= 0)
+ * So for each idx we have a WINDOW of valid start prefixes, ps[idx-r .. idx-l].
+ *
+ * WHAT WE WANT INSIDE THE WINDOW
+ * We want the smallest sum that is still > 0:
+ *      minimize ps[idx] - ps[j]   subject to   ps[idx] - ps[j] > 0
+ *   => maximize ps[j]             subject to   ps[j] < ps[idx]
+ * i.e. the largest prefix value STRICTLY LESS than ps[idx] in the window.
+ *
+ * WHY NOT A MONOTONIC DEQUE (my first attempt)
+ * A monotonic deque only works when one element dominates another for ALL future
+ * queries. Here the query threshold (ps[idx]) changes every step and the condition
+ * is "largest value below a moving threshold". Popping a smaller value because a
+ * larger one arrived is unsafe: a later, smaller ps[idx] may make the larger value
+ * ineligible while the discarded smaller one would have been the correct answer.
+ * No dominance relation survives a changing threshold, so we need an ordered
+ * structure that supports "predecessor of x" queries.
+ *
+ * DATA STRUCTURE: ordered set of {prefix_value, index}
+ *  - Sliding window: as idx moves right by 1, one new start becomes valid
+ *    (j = idx - l) and one becomes too far (j = idx - r - 1). Insert and erase those.
+ *  - The index in the pair makes every entry unique, so equal prefix values
+ *    (which are common) don't collide, and erasing removes exactly the right entry.
+ *    (A plain set<int> would break on duplicates; multiset would also work.)
+ *  - lower_bound({ps[idx], imin}) finds the first entry with value >= ps[idx].
+ *    Using imin as the index component ensures entries with an equal value are not
+ *    skipped. The entry just BEFORE it is the largest value strictly < ps[idx].
+ *
+ * COMPLEXITY
+ * Time:  O(n log(r - l + 1))   each step does one insert, one erase, one query.
+ * Space: O(n) for ps plus O(r - l + 1) for the set.
+ */
 class Solution {
   public:
   int minimumSumSubarray(vector<int>& a, int l, int r) {
     int n = sz(a);
 
-    set<pii> s; // {prefix_sum, idx}
+    // set of {prefix_sum, prefix_index} for all currently valid start positions j
+    set<pii> s;
+
+    // ps[k] = sum of first k elements, ps[0] = 0
     vi ps = { 0 };
     fo(i, 0, n) ps.pb(ps.back() + a[i]);
 
-    int res = imax; // all subarr sums < imax
+    int res = imax; // every valid subarray sum is < imax, so imax means "not found yet"
 
-    fo(i, l, n) {
-      // remove
-      if (i - r - 1 >= 0) {
-        s.erase({ ps[i - r - 1], i - r - 1 });
+    // i is the last element index of the subarray, so idx = i + 1 is the prefix index.
+    // Shortest allowed subarray has length l, so the first usable i is l - 1.
+    fo(i, l - 1, n) {
+      int idx = i + 1;
+
+      // REMOVE: start j = idx - r - 1 would give length r + 1 (too long), so it
+      // falls out of the window now.
+      if (idx - r - 1 >= 0) {
+        s.erase({ ps[idx - r - 1], idx - r - 1 });
       }
 
-      // add
-      if (i - l >= 0) {
-        s.insert({ ps[i - l], i - l });
+      // ADD: start j = idx - l gives length exactly l (shortest allowed), so it
+      // becomes valid now. Window is now exactly j in [idx - r, idx - l].
+      if (idx - l >= 0) {
+        s.insert({ ps[idx - l], idx - l });
       }
 
-      // compute
-      auto it = lower_bound
-
-
+      // QUERY: largest ps[j] strictly less than ps[idx] => smallest positive sum.
+      // lower_bound gives the first entry with value >= ps[idx]; the one before
+      // it (if any) is the best candidate with value < ps[idx].
+      auto it = s.lower_bound({ ps[idx], imin });
+      if (it != s.begin()) {
+        smin<int>(res, ps[idx] - prev(it)->ff);
+      }
+      // else: every value in the window is >= ps[idx], so no positive sum ends here
     }
 
     return res == imax ? -1 : res;
