@@ -411,47 +411,27 @@ class Solution {
   int minimumSumSubarray(vector<int>& a, int l, int r) {
     int n = sz(a);
 
-    int ps = 0;
-    deque<pair<int, int>> dq; // {idx, ps} back to front monotonic dec
-    dq.push_front({ -1, 0 });
+    set<pii> s; // {prefix_sum, idx}
+    vi ps = { 0 };
+    fo(i, 0, n) ps.pb(ps.back() + a[i]);
 
-    int res = imax; // any subarr sum < imax
+    int res = imax; // all subarr sums < imax
 
-    fo(i, 0, n) {
-      while (!dq.empty() && i - dq.back().ff > r) {
-        dq.pop_back();
+    fo(i, l, n) {
+      // remove
+      if (i - r - 1 >= 0) {
+        s.erase({ ps[i - r - 1], i - r - 1 });
       }
 
-      ps += a[i];
-
-      // back -> front: idx inc, vals dec
-      // i - back's idx <= r, cannot take if its < l
-      if (!dq.empty() && i - dq.back().ff >= l) {
-        // back -> front {idx, val}
-        // {1,6} {2,5} {3,4} {4,3}
-        // note: dq front->back is read by .begin->.end
-
-        // start of the valid range: first element with i - first >= l
-        auto st = partition_point(all(dq),
-          [&] (const auto& p) { return i - p.first < l; });
-
-        // found < ps for subarr sum > 0, restricted to [st, end)
-        auto it = lower_bound(st, dq.end(), ps,
-          [] (const auto& p, int v) { return p.second < v; });
-
-        if (it != st) {
-          --it; // largest second < ps within the range
-          smin(res, ps - it->ss);
-        }
-        // else: nothing valid (range empty, or every second >= ps)
+      // add
+      if (i - l >= 0) {
+        s.insert({ ps[i - l], i - l });
       }
 
-      while (!dq.empty() && dq.front().ss <= ps) {
-        dq.pop_front();
-      }
-      dq.push_front({ i, ps });
+      // compute
+      auto it = lower_bound
 
-      dbg(dq);
+
     }
 
     return res == imax ? -1 : res;
