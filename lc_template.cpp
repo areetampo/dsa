@@ -146,7 +146,6 @@ template <class T> void _print(const T& x) {
   } else if constexpr (is_adapter<T>::value) {
     T c = x; vector<decay_t<decltype(_top(c))>> v;
     while (!c.empty()) { v.push_back(_top(c)); c.pop(); }
-    if constexpr (!is_queue<T>::value) reverse(all(v));
     _print(v);
   } else if constexpr (is_iter<T>::value) {
     cout << "["; bool first = true;
