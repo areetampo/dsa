@@ -398,3 +398,27 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  int countPairs(vector<vector<int>>& coordinates, int k) {
+    map<i64, int> seen;
+    int res = 0;
+
+    trav(p, coordinates) {
+      i64 x = p[0], y = p[1];
+
+      fo(a, 0, k + 1) {
+        int b = k - a;
+
+        i64 key = ((x ^ a) << 20) | (y ^ b); // all vals <= 1e6
+
+        if (seen.find(key) != seen.end())
+          res += seen[key];
+      }
+
+      seen[(x << 20) | y]++;
+    }
+
+    return res;
+  }
+};
