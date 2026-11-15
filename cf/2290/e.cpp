@@ -310,7 +310,17 @@ inline void solve() {
   i64 n, k; cin >> n >> k;
   vi a = iv(n);
 
-  
+  vi p(n, 0); i64 s = 0;
+  fr(i, n - 1, 0) {
+    s += -p[i] + a[i];
+    a[i] = s;
+    if (i - k - 1 >= 0) p[i - k - 1] = s;
+  }
+  dbg(a);
+
+  s = accumulate(all(a), 0ll);
+
+  cout << (s % 2 ? "Alice" : "Bob") << "\n";
 }
 
 int main() {
