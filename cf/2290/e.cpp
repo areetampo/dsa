@@ -310,13 +310,23 @@ inline void solve() {
   i64 n, k; cin >> n >> k;
   vi a = iv(n);
 
-  vi p(n, 0); i64 s = 0;
+  // 1 2 3 4 5 k=2
+  // 1 2 35 45 5
+  // 1 245 3455 45 5
+  // 13455 2344555 3455 45 5
+  // 123344455555 2344555 3455 45 5
+
+  // building right to left give next k to cur
+
+  i64 s = 0;
   fr(i, n - 1, 0) {
-    s += -p[i] + a[i];
-    a[i] = s;
-    if (i - k - 1 >= 0) p[i - k - 1] = s;
+    if (i + k + 1 < n) s -= a[i + k + 1];
+    // dbg(s);
+    a[i] += s;
+    s += a[i];
+    // dbg(a[i], s);
   }
-  dbg(a);
+  // dbg(a);
 
   s = accumulate(all(a), 0ll);
 
