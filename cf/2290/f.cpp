@@ -305,7 +305,7 @@ inline void precomp() {
 }
 
 inline void solve() {
-
+  
 }
 
 int main() {

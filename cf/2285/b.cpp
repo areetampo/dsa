@@ -305,7 +305,22 @@ inline void precomp() {
 }
 
 inline void solve() {
+  i64 n, k; string s;
+  cin >> n >> k >> s;
 
+  i64 ones = count(all(s), '1');
+
+  auto calc = [&] (i64 x) -> i64 {
+    x = max<i64>(0, min(n, x));
+    i64 zeros = n - x;
+    return 1ll + x * (x + 1) / 2 + zeros * (zeros + 1) / 2;
+  };
+
+  i64 res = max(
+    calc(ones - k), calc(ones + k)
+  );
+
+  cout << res << "\n";
 }
 
 int main() {

@@ -305,7 +305,18 @@ inline void precomp() {
 }
 
 inline void solve() {
+  int n; cin >> n;
 
+  if (n <= 3) { cout << "-1\n"; return; }
+
+  if (n & 1) {
+    cout << n - 1 << " " << n << " ";
+    fo(i, 3, n - 1) cout << i << " ";
+    cout << "1 2";
+  } else {
+    fr(i, n, 1) cout << i << " ";
+  }
+  cout << "\n";
 }
 
 int main() {
