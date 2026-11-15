@@ -398,3 +398,33 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  long long maxDifference(vector<int>& a) {
+    int n = sz(a);
+
+    vi dp(n + 1, lmin);
+
+    auto dfs = [&] (auto&& self, int i) -> i64 {
+      if (i >= n) return 0;
+      if (dp[i] != lmin) return dp[i];
+
+      i64 sum_1 = a[i],
+        res_1 = (sum_1 % 3 == 0) ?
+        sum_1 - self(self, i + 1)
+        : sum_1 + self(self, i + 1);
+
+      i64 res_2 = 0;
+      if (i + 1 < n) {
+        i64 sum_2 = (i64)a[i] + a[i + 1];
+        res_2 = (sum_2 % 3 == 0) ?
+          sum_2 - self(self, i + 2)
+          : sum_2 + self(self, i + 2);
+      }
+
+      return dp[i] = max(res_1, res_2);
+    };
+
+    return dfs(dfs, 0);
+  }
+};
