@@ -400,31 +400,57 @@ static const int _fast_io = [] () {
 
 class Solution {
   public:
-  long long maxDifference(vector<int>& a) {
-    int n = sz(a);
+  long long countConsistent(vector<int>& a) {
+    int n = sz(a), B = 30;
 
-    vi dp(n + 1, lmin);
-
-    auto dfs = [&] (auto&& self, int i) -> i64 {
-      if (i >= n) return 0;
-      if (dp[i] != lmin) return dp[i];
-
-      i64 sum_1 = a[i],
-        res_1 = (sum_1 % 3 == 0) ?
-        sum_1 - self(self, i + 1)
-        : sum_1 + self(self, i + 1);
-
-      i64 res_2 = 0;
-      if (i + 1 < n) {
-        i64 sum_2 = (i64)a[i] + a[i + 1];
-        res_2 = (sum_2 % 3 == 0) ?
-          sum_2 - self(self, i + 2)
-          : sum_2 + self(self, i + 2);
+    vvi cnt(B, vi(n + 1, 0));
+    fo(k, 0, B) {
+      fo(j, 0, n) {
+        cnt[k][j + 1] = cnt[k][j] + ((a[j] >> k) & 1);
       }
+    }
 
-      return dp[i] = max(res_1, res_2);
+    auto ok = [&] (int a, int b, int mask) {
+      int len = b - a + 1;
+      fo(k, 0, B) {
+        if (((mask >> k) & 1) && cnt[k][b + 1] - cnt[k][a] != len) {
+          return 0;
+        }
+      }
+      return 1;
     };
 
-    return dfs(dfs, 0);
+    vi prev_eq(n, -1);
+    map<int, int> last;
+    fo(i, 0, n) {
+      if (last.count(a[i])) prev_eq[i] = last[a[i]];
+      last[a[i]] = i;
+    }
+
+    i64 res = 0;
+
+    fo(i, 0, n) {
+      int lo = i, hi = n - 1;
+      while (lo <= hi) {
+        int m = lo + (hi - lo) / 2;
+        if (ok(i, m, a[i])) lo = m + 1;
+        else hi = m - 1;
+      }
+
+      int right = hi;
+
+      lo = prev_eq[i] + 1; hi = i;
+      while (lo <= hi) {
+        int m = lo + (hi - lo) / 2;
+        if (ok(m, i, a[i])) hi = m - 1;
+        else lo = m + 1;
+      }
+
+      int left = lo;
+
+      res += 1ll * (i - left + 1) * (right - i + 1);
+    }
+
+    return res;
   }
 };
