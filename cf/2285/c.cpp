@@ -305,7 +305,18 @@ inline void precomp() {
 }
 
 inline void solve() {
+  int n; cin >> n; vi a = iv(n);
 
+  sort(allr(a));
+  a.pb(0);
+
+  Mint1 res = 1;
+
+  for (int i = 0; i < n && a[i] != a[i + 1]; i++) {
+    res += power(a[i] - 1, i + 1, MOD);
+  }
+
+  cout << res << "\n";
 }
 
 int main() {
