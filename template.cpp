@@ -1,3 +1,8 @@
+#define DEBUG_MODE 1
+#if !DEBUG_MODE
+#define NDEBUG
+#endif
+
 #include <bits/stdc++.h>
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp>
@@ -45,8 +50,8 @@ template <class K> using Set = set<K>;
 template <class K> using MSet = multiset<K>;
 template <class T> using PQ = priority_queue<T>;
 template <class T> using PQG = priority_queue<T, vector<T>, greater<T>>;
-// order statistics set. OST<i64> s; s.insert(x); s.find_by_order(k) -> iterator to k-th smallest (0-indexed)
-// s.order_of_key(x) -> count of elements < x. No duplicates: insert pair{x, unique_id} for multiset behaviour
+// OST<i64> s; s.insert(x); *s.find_by_order(k) = k-th smallest (0 indexed); s.order_of_key(x) = how many are < x
+// no dupes in there, insert pair{x, id} for multiset behaviour
 template <class T> using OST = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 /********************************************************/
@@ -66,6 +71,9 @@ template <class T> inline bool smin(T& a, const T& b) { return b < a ? (a = b, t
 template <class T> inline bool smax(T& a, const T& b) { return a < b ? (a = b, true) : false; }
 template <class T> inline i32 sz(const T& c) { return (i32)c.size(); }
 template <class T> inline T sign(T x) { return (x > 0) - (x < 0); }
+template <class A, class B, class C> inline bool inside(A x, B lo, C hi) { return lo <= x && x <= hi; }
+template <class C> inline i64 argmin(const C& c) { return min_element(c.begin(), c.end()) - c.begin(); }
+template <class C> inline i64 argmax(const C& c) { return max_element(c.begin(), c.end()) - c.begin(); }
 
 inline i64 popcount(u64 x) { return __builtin_popcountll(x); }
 inline i64 ctz(u64 x) { return x ? __builtin_ctzll(x) : 64; }
@@ -90,6 +98,10 @@ template <class T> void print_fp(T x, int precision = 15) {
 #define fr(i, x, y, ...) for (i64 i = (x); i >= (y); i -= (1 __VA_OPT__(* 0 + (__VA_ARGS__))))
 #define fox(i, x, y, expr) for (i64 i = (x); i < (y); i = (expr))
 #define frx(i, x, y, expr) for (i64 i = (x); i >= (y); i = (expr))
+// rep(n) runs the body n times, the counter is hidden so nesting is fine
+#define REP_(n, id) for (i64 _r##id = 0; _r##id < (n); ++_r##id)
+#define REP(n, id) REP_(n, id)
+#define rep(n) REP(n, __COUNTER__)
 #define trav(a, b) for (auto& a : b)
 #define CA const auto&
 #define pb push_back
@@ -102,8 +114,9 @@ template <class T> void print_fp(T x, int precision = 15) {
 /********************************************************/
 /* Debug (stderr, compiled out if DEBUG_MODE is 0)      */
 /********************************************************/
-// stack, queue, deque, pq, pqg print the end you take from on the left: stack top, queue/deque front, heap top, then toward the other end
-#define DEBUG_MODE 1
+// dbg(a, b) prints "a = .., b = .." with brackets for containers, works nested and on pairs / tuples
+// stack, queue, deque, pq all print left to right starting from the end you take from (top / front)
+// assert_eq(x, y) aborts and shows both values when they differ, for checking against a brute force
 #if DEBUG_MODE
 template <class T> struct is_pair : false_type {};
 template <class A, class B> struct is_pair<pair<A, B>> : true_type {};
@@ -125,7 +138,7 @@ template <class T> void _print(const T& x) {
   else if constexpr (is_same_v<T, char>) cerr << '\'' << x << '\'';
   else if constexpr (is_same_v<T, bool>) cerr << (x ? "true" : "false");
 #ifdef __SIZEOF_INT128__
-  else if constexpr (is_same_v<T, i128> || is_same_v<T, u128>) {
+  else if constexpr (is_same_v<T, i128> || is_same_v<T, u128>) {   // cerr can't print these directly
     if (x == 0) { cerr << 0; return; }
     string s; T y = x; bool neg = false;
     if constexpr (is_same_v<T, i128>) if (y < 0) { neg = true; y = -y; }
@@ -141,7 +154,7 @@ template <class T> void _print(const T& x) {
     apply([] (const auto&... e) { size_t i = 0; ((cerr << (i++ ? ", " : ""), _print(e)), ...); }, x);
     cerr << "}";
   } else if constexpr (is_adapter<T>::value) {
-    T c = x; vector<decay_t<decltype(_top(c))>> v;
+    T c = x; vector<decay_t<decltype(_top(c))>> v;   // work on a copy and pop it dry
     while (!c.empty()) { v.push_back(_top(c)); c.pop(); }
     _print(v);
   } else if constexpr (is_iter<T>::value) {
@@ -149,7 +162,7 @@ template <class T> void _print(const T& x) {
     for (const auto& e : x) { if (!first) cerr << ", "; first = false; _print(e); }
     cerr << "]";
   } else cerr << x;
-}
+  }
 
 inline vector<string> _dbg_split(const string& s) {
   vector<string> res; string cur; int depth = 0;
@@ -170,11 +183,14 @@ template <class... A> void _dbg_impl(const vector<string>& names, const A&... a)
   ((cerr << names[i++] << " = ", _print(a), cerr << (i < sizeof...(A) ? ", " : "\n")), ...);
 }
 #define dbg(...) do { auto _n = _dbg_split(#__VA_ARGS__); _dbg_impl(_n, __VA_ARGS__); } while (0)
+#define assert_eq(a, b) do { auto _x = (a); auto _y = (b); if (!(_x == _y)) { \
+    cerr << "mismatch: "; _print(_x); cerr << " vs "; _print(_y); cerr << "\n"; abort(); } } while (0)
 inline void dsep(int n = 40) { cerr << string(n, '-') << "\n"; }
 #define sl dsep(20)
 #define bl dsep(40)
 #else
 #define dbg(...) ((void)0)
+#define assert_eq(a, b) ((void)0)
 inline void dsep(int = 40) {}
 #define sl
 #define bl
@@ -207,17 +223,17 @@ vvi ig(i64 n, i64 m, bool undirected = true) {
 /********************************************************/
 /* Math                                                 */
 /********************************************************/
-// Result type of mulmod/power: i64 for integer inputs, f64/f80 for floating inputs (f32 is promoted to f64)
+// result type for mulmod / power: i64 when everything is an int, f64 or f80 as soon as a float is involved
 template <class... T> using NumR = conditional_t<is_floating_point_v<common_type_t<T...>>,
   conditional_t<is_same_v<common_type_t<T...>, f32>, f64, common_type_t<T...>>, i64>;
 
-template <class R> inline R _md(R a, R m) {
+template <class R> inline R _md(R a, R m) {   // remainder that is never negative
   if constexpr (is_floating_point_v<R>) a = fmod(a, m); else a %= m;
   return a < 0 ? a + m : a;
 }
 
-// mulmod(a, b)    -> a * b, no mod. Integers: returns -1 if the product overflows i64. Floats: plain a * b
-// mulmod(a, b, m) -> a * b % m, no overflow even for m up to 9e18 (a and b already in [0, m)). Floats use fmod
+// mulmod(a, b) is just a * b but gives -1 if it doesn't fit in i64
+// mulmod(a, b, m) is a * b % m with a, b already in [0, m), safe for m up to ~9e18
 template <class A, class B> inline NumR<A, B> mulmod(A a, B b) {
   using R = NumR<A, B>;
   if constexpr (is_floating_point_v<R>) return (R)a * (R)b;
@@ -232,9 +248,8 @@ template <class A, class B, class M> inline NumR<A, B, M> mulmod(A a, B b, M m) 
   }
 }
 
-// power(b, e)    -> b^e, no mod. Integers: returns -1 if the result overflows i64 (or e < 0). Floats: plain result, e may be negative
-// power(b, e, m) -> b^e % m (e >= 0). Floats: fmod of the plain result, so precision drops if b^e is huge
-// power(2, 10) -> i64 | power(1.5, 3) -> f64 | power(1.5L, 3) -> f80
+// power(b, e) gives -1 if the result overflows i64 (or e < 0), floats just get the plain value (negative e ok)
+// power(b, e, m) is modpow, e >= 0. for floats it's fmod of the plain power so it loses precision on huge values
 template <class A> inline NumR<A> power(A b, i64 e) {
   using R = NumR<A>;
   if constexpr (is_floating_point_v<R>) {
@@ -272,9 +287,11 @@ inline i64 isqrt(i64 n) {
   return x;
 }
 
+// number type that reduces itself: Mint1 a = 5; a = a * 3 / 2; cout << a;   a.v is the raw value
+// / and inv() need a prime mod. Mint1 and Mint2 can't be mixed in one expression
 template <u32 M> struct ModInt {
   u32 v;
-  constexpr ModInt(i64 x = 0) : v((u32)(((x % (i64)M) + M) % M)) {}
+  constexpr ModInt(i64 x = 0) : v((u32)((x %= (i64)M) < 0 ? x + M : x)) {}
   ModInt& operator+=(const ModInt& o) { v += o.v; if (v >= M) v -= M; return *this; }
   ModInt& operator-=(const ModInt& o) { v += M - o.v; if (v >= M) v -= M; return *this; }
   ModInt& operator*=(const ModInt& o) { v = (u64)v * o.v % M; return *this; }
@@ -300,18 +317,13 @@ using Mint2 = ModInt<998'244'353>;
 constexpr bool MULTI = true;
 int TC_TOTAL = 1, TC_CUR = 0;
 
-inline void precomp() {
-
-}
-
-inline void solve() {
-
-}
+void precomp();
+void solve();
 
 int main() {
   ios_base::sync_with_stdio(false);
   cin.tie(nullptr);
-#ifdef LOCAL
+#if DEBUG_MODE
   auto begin = chrono::steady_clock::now();
 #endif
   precomp();
@@ -321,9 +333,21 @@ int main() {
     solve();
     bl;
   }
-#ifdef LOCAL
+#if DEBUG_MODE
   auto end = chrono::steady_clock::now();
   cerr << "time: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms\n";
 #endif
   return 0;
+}
+
+/********************************************************/
+/* Solution                                             */
+/********************************************************/
+
+void precomp() {
+
+}
+
+void solve() {
+
 }
