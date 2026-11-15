@@ -1,4 +1,7 @@
 #define DEBUG_MODE 1
+#if !DEBUG_MODE
+#define NDEBUG
+#endif
 
 #include <bits/stdc++.h>
 #include <ext/pb_ds/assoc_container.hpp>
@@ -68,6 +71,9 @@ template <class T> inline bool smin(T& a, const T& b) { return b < a ? (a = b, t
 template <class T> inline bool smax(T& a, const T& b) { return a < b ? (a = b, true) : false; }
 template <class T> inline i32 sz(const T& c) { return (i32)c.size(); }
 template <class T> inline T sign(T x) { return (x > 0) - (x < 0); }
+template <class A, class B, class C> inline bool inside(A x, B lo, C hi) { return lo <= x && x <= hi; }
+template <class C> inline i64 argmin(const C& c) { return min_element(c.begin(), c.end()) - c.begin(); }
+template <class C> inline i64 argmax(const C& c) { return max_element(c.begin(), c.end()) - c.begin(); }
 
 inline i64 popcount(u64 x) { return __builtin_popcountll(x); }
 inline i64 ctz(u64 x) { return x ? __builtin_ctzll(x) : 64; }
@@ -92,6 +98,9 @@ template <class T> void print_fp(T x, int precision = 15) {
 #define fr(i, x, y, ...) for (i64 i = (x); i >= (y); i -= (1 __VA_OPT__(* 0 + (__VA_ARGS__))))
 #define fox(i, x, y, expr) for (i64 i = (x); i < (y); i = (expr))
 #define frx(i, x, y, expr) for (i64 i = (x); i >= (y); i = (expr))
+#define REP_(n, id) for (i64 _r##id = 0; _r##id < (n); ++_r##id)
+#define REP(n, id) REP_(n, id)
+#define rep(n) REP(n, __COUNTER__)
 #define trav(a, b) for (auto& a : b)
 #define CA const auto&
 #define pb push_back
@@ -173,11 +182,14 @@ template <class... A> void _dbg_impl(const vector<string>& names, const A&... a)
   ((cout << names[i++] << " = ", _print(a), cout << (i < sizeof...(A) ? ", " : "\n")), ...);
 }
 #define dbg(...) do { auto _n = _dbg_split(#__VA_ARGS__); _dbg_impl(_n, __VA_ARGS__); } while (0)
+#define assert_eq(a, b) do { auto _x = (a); auto _y = (b); if (!(_x == _y)) { \
+    cout << "mismatch: "; _print(_x); cout << " vs "; _print(_y); cout << endl; abort(); } } while (0)
 inline void dsep(int n = 40) { cout << string(n, '-') << "\n"; }
 #define sl dsep(20)
 #define bl dsep(40)
 #else
 #define dbg(...) ((void)0)
+#define assert_eq(a, b) ((void)0)
 inline void dsep(int = 40) {}
 #define sl
 #define bl
@@ -357,7 +369,7 @@ inline i64 isqrt(i64 n) {
 
 template <u32 M> struct ModInt {
   u32 v;
-  constexpr ModInt(i64 x = 0) : v((u32)(((x % (i64)M) + M) % M)) {}
+  constexpr ModInt(i64 x = 0) : v((u32)((x %= (i64)M) < 0 ? x + M : x)) {}
   ModInt& operator+=(const ModInt& o) { v += o.v; if (v >= M) v -= M; return *this; }
   ModInt& operator-=(const ModInt& o) { v += M - o.v; if (v >= M) v -= M; return *this; }
   ModInt& operator*=(const ModInt& o) { v = (u64)v * o.v % M; return *this; }
