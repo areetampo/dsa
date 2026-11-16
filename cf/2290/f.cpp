@@ -305,7 +305,18 @@ inline void precomp() {
 }
 
 inline void solve() {
-  
+  int n; cin >> n; vi a = iv(n);
+
+  vi vis(n + 1, 0);
+
+  for (int i = 1, d = -n + 1; i <= n; i++, d += 2) {
+    int pos = i + a[i - 1] - d;
+    if (vis[pos] != 0) { cout << "-1\n"; return; }
+    vis[pos] = i;
+  }
+
+  fo(i, 1, n + 1) cout << vis[i] << " ";
+  cout << "\n";
 }
 
 int main() {
