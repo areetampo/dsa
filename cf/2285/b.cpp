@@ -308,6 +308,34 @@ inline void solve() {
   i64 n, k; string s;
   cin >> n >> k >> s;
 
+  /*
+  * f(m): diversity of a binary string of length n that has m ones (and n-m zeros).
+  *
+  * The paint operation sets s[l..r] to all 0s or all 1s (at most once).
+  *
+  *  - Do nothing:
+  *        1 string (the string itself).
+  *
+  *  - Paint a segment with 0s:
+  *        Only the 1s inside the segment change (1 -> 0).
+  *        The result is decided by which consecutive block of 1s gets wiped,
+  *        i.e. a (first 1, last 1) pair with first <= last.
+  *        Number of such pairs = m(m+1)/2.
+  *
+  *  - Paint a segment with 1s:
+  *        Same idea on the zeros: (n-m)(n-m+1)/2.
+  *
+  *  - The 0-paint results, the 1-paint results and the original string never
+  *    coincide (0-paint only removes 1s, 1-paint only removes 0s, and
+  *    painting a block that contains no change just gives the original,
+  *    which is already counted once), so we simply add the counts.
+  *
+  * f(m) = 1 + m(m+1)/2 + (n-m)(n-m+1)/2
+  *
+  * The two terms are linked only through m: raising m grows the first term
+  * and shrinks the second.
+  */
+
   i64 ones = count(all(s), '1');
 
   auto calc = [&] (i64 x) -> i64 {
