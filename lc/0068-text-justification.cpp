@@ -418,26 +418,33 @@ class Solution {
     vs res;
 
     for (int i = 0, j; i < n; i = j) {
-      int single_spaces = 0, words_sz = 0, cnt = 0, w = max_width;
-      while (i < n && w - sz(words[i]) - single_spaces >= 0) {
-        w -= sz(words[i]);
-        words_sz += sz(words[i]);
-        single_spaces++;
-        j++, cnt++;
+      j = i;
+      int words_sz = 0, single_spaces = 0, cnt = 0;
+
+      while (j < n && max_width >= words_sz + sz(words[j]) + single_spaces) {
+        words_sz += sz(words[j]);
+        single_spaces++, cnt++;
+        j++;
       }
 
       res.pb("");
 
+      // taken: i to j-1
+      // always atleast 1 word taken since words[i] <= max_width
       int space = max_width - words_sz,
-        bw_space = (cnt - 1) / space, extras = (cnt - 1) % space;
+        bw_space = cnt > 1 ? space / (cnt - 1) : 0,
+        extras = cnt > 1 ? space % (cnt - 1) : 0;
+
+      // single gaps on last line
+      if (j == n) bw_space = 1, extras = 0;
 
       fo(k, i, j - 1) {
         res.back() += words[k] + string(bw_space + (extras-- > 0 ? 1 : 0), ' ');
       }
       res.back() += words[j - 1];
 
-      // when only 1 word, last has space to right
-      if (cnt == 1) res.back() += string(max_width - sz(words[i]), ' ');
+      // append any spaces
+      res.back() += string(max_width - sz(res.back()), ' ');
     }
 
     return res;
