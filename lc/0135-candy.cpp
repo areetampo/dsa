@@ -414,23 +414,31 @@ class Solution {
   public:
   int candy(vector<int>& a) {
     int n = sz(a);
+    vi res(n, 1), indeg(n, 0);
 
-    int res = 0, c = 1, c1, c2;
-
-    for (int i = 1; i < n - 1; i++) {
-      int l = a[i - 1], m = a[i], r = a[i + 1];
-
-      if (l < m || m > r) c++;
-      else c = 1;
-
-      if (i == 1) c1 = c;
-      else if (i == n - 2) c2 = c;
-
-      res += c;
+    // indeg[i] = number of strictly lower neighbors
+    fo(i, 0, n) {
+      if (i > 0 && a[i - 1] < a[i]) indeg[i]++;
+      if (i < n - 1 && a[i + 1] < a[i]) indeg[i]++;
     }
 
-    if ()
+    queue<int> q;
+    fo(i, 0, n)
+      if (indeg[i] == 0) q.push(i); // all local minima
 
-    return res;
+    while (!q.empty()) {
+      int u = q.front(); q.pop();
+
+      for (int v : {u - 1, u + 1}) {
+        if (v < 0 || v >= n) continue;
+
+        if (a[v] > a[u]) {
+          smax(res[v], res[u] + 1);
+          if (--indeg[v] == 0) q.push(v);
+        }
+      }
+    }
+
+    return accumulate(all(res), 0);
   }
 };
