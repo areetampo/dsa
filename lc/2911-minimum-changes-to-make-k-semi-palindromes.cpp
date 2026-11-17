@@ -410,18 +410,108 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * LOGIC
+ * -----
+ * Goal: split s into exactly k substrings, minimizing the total number of
+ * character changes needed to make every substring a semi-palindrome.
+ *
+ * Step 1: cost[i][j] (1-indexed, inclusive) = min changes to make s[i..j]
+ *   a semi-palindrome.
+ *   - A substring of length len may use any divisor d with 1 <= d < len and
+ *     len % d == 0.
+ *   - For a fixed d, positions i, i+d, i+2d, ... form one group, and there
+ *     are d groups, starting at i, i+1, ..., i+d-1.
+ *   - Each group must be a palindrome. A group with x+1 elements needs
+ *     (x+1)/2 mirrored pairs checked, and each mismatched pair costs 1 change.
+ *   - cost = minimum over all valid d.
+ *   - Length-1 substrings have no valid divisor, so their cost stays INF.
+ *
+ * Step 2: dp[j][p] = min cost to split the first j characters into exactly
+ *   p semi-palindromic substrings.
+ *   - Base: dp[0][0] = 0.
+ *   - Transition: the last substring is s[i..j] (length >= 2), and the
+ *     remaining prefix of length i-1 is split into p-1 parts:
+ *         dp[j][p] = min over i of dp[i-1][p-1] + cost[i][j]
+ *   - Answer: dp[n][k].
+ *
+ * Complexity:
+ *   cost precomputation: O(n^2 * sigma(len)), where sigma is the divisor sum,
+ *     because each (substring, divisor) pair scans about len characters.
+ *   dp: O(n^2 * k)
+ */
 class Solution {
   public:
-  int removeElement(vector<int>& a, int val) {
-    int n = sz(a);
+  int minimumChanges(string s, int k) {
+    int n = sz(s);
 
-    int r = 0, w = 0;
-    for (; r < n; r++) {
-      if (a[r] != val) a[w++] = a[r];
+    // cost[i][j] = min changes to make 1-indexed s[i..j] a semi-palindrome
+    // (INF if impossible, i.e. length 1)
+    vvi cost(n + 1, vi(n + 1, INF));
+
+    // i, j are 0-indexed inclusive here; the result is stored 1-indexed
+    auto calc_substr_cost = [&] (int i, int j) -> void {
+      int len = j - i + 1;
+
+      // proper divisors of len (d < len): collect d and len/d for each divisor
+      // pair, skipping d = len (len/d when d = 1) and avoiding duplicates
+      vi divisors;
+      for (int d = 1; d * d <= len; d++) {
+        if (len % d) continue;
+        divisors.pb(d);
+        if (d > 1 && d != len / d) divisors.pb(len / d);
+      }
+
+      i64 mn_cost = INF;
+
+      trav(d, divisors) {
+        i64 c = 0;
+
+        // d groups; group u starts at index st
+        fo(u, 1, d + 1) {
+          int st = i + u - 1;
+          // group elements: st, st+d, ..., st+x*d  (last index <= j)
+          // so the group has x+1 elements
+          int x = (j - st) / d;
+
+          // compare mirrored pairs: v-th element from the front vs the back
+          fo(v, 0, (x + 1) / 2) {
+            c += s[st + v * d] != s[st + (x - v) * d];
+          }
+        }
+
+        smin(mn_cost, c);
+      }
+
+      cost[i + 1][j + 1] = mn_cost;
+    };
+
+    // only substrings of len >= 2 (j >= i + 1); len 1 is invalid semi-palindrome
+    fo(i, 0, n) fo(j, i + 1, n) calc_substr_cost(i, j);
+
+    // dp[j][p] = min cost to split the prefix of len j into p substrings
+    // p substrings = p + 1 partitions
+    // assume partition 0 placed at -1 and partition k placed at n-1 of string
+    vvi dp(n + 1, vi(k + 1, INF));
+    dp[0][0] = 0;
+
+    fo(j, 2, n + 1) {
+      // one substring covering the whole prefix
+      dp[j][1] = cost[1][j];
+
+      fo(part, 2, k + 1) {
+        // last substring is s[i..j] with len len >= 2
+        fo(len, 2, j + 1) {
+          int i = j - len + 1;
+
+          // prefix of len i-1 is split into part-1 substrings
+          smin(dp[j][part],
+            dp[i - 1][part - 1] + (cost[i][j])
+          );
+        }
+      }
     }
 
-    a.resize(w);
-
-    return w;
+    return dp[n][k];
   }
 };
