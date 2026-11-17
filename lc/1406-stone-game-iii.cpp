@@ -334,9 +334,9 @@ public:
 
         for (int i = n - 1; i >= 0; i--) {
             int curr = v[i] - dp[0];
-            if (i + 1 < n) 
+            if (i + 1 < n)
                 curr = max(curr, v[i] + v[i + 1] - dp[1]);
-            if (i + 2 < n) 
+            if (i + 2 < n)
                 curr = max({curr, v[i] + v[i + 1] + v[i + 2] - dp[2]});
 
             // at any point 3 dp vals needed, shift to remove rest
