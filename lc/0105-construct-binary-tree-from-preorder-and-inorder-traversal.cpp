@@ -446,22 +446,19 @@ class Solution {
   public:
   TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
     int n = sz(preorder);
+    UMap<int, int> pos;
+    fo(i, 0, n) pos[inorder[i]] = i;
 
-    auto dfs = [&] (auto&& self, int pre_s, int pre_e, int in_s, int in_e) -> TreeNode* {
-      int val = preorder[pre_s];
-      TreeNode* root = new TreeNode(val);
-
-      if (pre_s == pre_e) return root;
-
-      int in_split = find(all(inorder), val) - inorder.begin();
-      int pre_split = find(all(preorder), inorder[in_split - 1]) - preorder.begin();
-
-      root->left = self(self, pre_s + 1, pre_split, in_s, in_split - 1);
-      root->right = self(self, pre_split + 1, pre_e, in_split + 1, in_e);
-
+    auto dfs = [&] (auto&& self, int ps, int is, int ie) -> TreeNode* {
+      if (is > ie) return nullptr;
+      TreeNode* root = new TreeNode(preorder[ps]);
+      int mid = pos[root->val];
+      int left_size = mid - is;
+      root->left = self(self, ps + 1, is, mid - 1);
+      root->right = self(self, ps + 1 + left_size, mid + 1, ie);
       return root;
     };
 
-    return dfs(dfs, 0, n - 1, 0, n - 1);
+    return dfs(dfs, 0, 0, n - 1);
   }
 };
