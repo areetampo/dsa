@@ -48,6 +48,21 @@ struct chash {
     for (unsigned char c : s) h = sm(h + c);
     return h;
   }
+  template <class... A> size_t operator()(const tuple<A...>& t) const {
+    u64 h = 0;
+    apply([&] (const auto&... e) { ((h = sm(h * 31 + (*this)(e))), ...); }, t);
+    return h;
+  }
+  template <class T> size_t operator()(const vector<T>& v) const {
+    u64 h = v.size();
+    for (const auto& e : v) h = sm(h * 31 + (*this)(e));
+    return h;
+  }
+  template <class T, size_t N> size_t operator()(const array<T, N>& v) const {
+    u64 h = N;
+    for (const auto& e : v) h = sm(h * 31 + (*this)(e));
+    return h;
+  }
 };
 template <class K, class V> using UMap = unordered_map<K, V, chash>;
 template <class K> using USet = unordered_set<K, chash>;
@@ -188,7 +203,7 @@ inline vector<string> _dbg_split(const string& s) {
 template <class... A> void _dbg_impl(const vector<string>& names, const A&... a) {
   size_t i = 0;
   ((cerr << names[i++] << " = ", _print(a), cerr << (i < sizeof...(A) ? ", " : "\n")), ...);
-}
+  }
 #define dbg(...) do { auto _n = _dbg_split(#__VA_ARGS__); _dbg_impl(_n, __VA_ARGS__); } while (0)
 #define assert_eq(a, b) do { auto _x = (a); auto _y = (b); if (!(_x == _y)) { \
     cerr << "mismatch: "; _print(_x); cerr << " vs "; _print(_y); cerr << "\n"; abort(); } } while (0)
