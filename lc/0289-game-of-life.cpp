@@ -426,7 +426,7 @@ class Solution {
       fo(j, 0, m) {
         int alive = 0;
         fo(k, 0, 8) {
-          int ni = dir8[k], nj = dir8[k + 1];
+          int ni = i + dir8[k], nj = j + dir8[k + 1];
           if (min(ni, nj) < 0 || ni == n || nj == m) continue;
           alive += g[ni][nj] & 1;
         }
