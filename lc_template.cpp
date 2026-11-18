@@ -202,7 +202,7 @@ inline vector<string> _dbg_split(const string& s) {
 template <class... A> void _dbg_impl(const vector<string>& names, const A&... a) {
   size_t i = 0;
   ((cout << names[i++] << " = ", _print(a), cout << (i < sizeof...(A) ? ", " : "\n")), ...);
-  }
+}
 #define dbg(...) do { auto _n = _dbg_split(#__VA_ARGS__); _dbg_impl(_n, __VA_ARGS__); } while (0)
 #define assert_eq(a, b) do { auto _x = (a); auto _y = (b); if (!(_x == _y)) { \
     cout << "mismatch: "; _print(_x); cout << " vs "; _print(_y); cout << endl; abort(); } } while (0)
@@ -220,8 +220,7 @@ inline void dsep(int = 40) {}
 /********************************************************/
 /* ListNode / TreeNode                                  */
 /********************************************************/
-// Only defined with -DLOCAL: LeetCode already declares these, so skipping them on submit avoids redefinition
-#ifdef LOCAL
+#if defined(LOCAL) || defined(__INTELLISENSE__)
 struct ListNode {
   int val;
   ListNode* next;
