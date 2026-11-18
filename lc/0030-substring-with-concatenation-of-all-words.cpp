@@ -410,27 +410,146 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * PROBLEM: Substring with Concatenation of All Words
+ *
+ * IDEA
+ * ----
+ * Every word has the same length k. So a concatenated substring starting at
+ * index p is made of blocks at positions p, p+k, p+2k, ...
+ * Think of s as a sequence of WORDS instead of characters, then run a
+ * standard "window with frequency counts" over that sequence.
+ *
+ * STEP 1: Preprocess
+ *   - Give each distinct word an integer id.
+ *   - need[id] = how many times that word appears in `words`.
+ *   - id[i] = id of s.substr(i, k), or -1 if it is not a word in `words`.
+ *     (Computed once, O(n * k). Avoids substr + hashing in the main loop.)
+ *
+ * STEP 2: Handle alignment with k offsets
+ *   - Blocks starting at different (index mod k) never mix.
+ *   - So for each offset o in [0, k), look only at indices o, o+k, o+2k, ...
+ *   - The k passes together cover every possible start index.
+ *
+ * STEP 3: Sliding window per offset
+ *   State: window = [left, right), seen[id] = copies in window, count = #words.
+ *   For each new block w = id[right]:
+ *     a) w == -1       -> no valid window can contain it.
+ *                         Clear window, left = right + k.
+ *     b) w is a word   -> seen[w]++, count++.
+ *                         While seen[w] > need[w]: remove id[left], left += k.
+ *                         (Window now never has more copies than allowed.)
+ *     c) count == m    -> window has exactly the multiset `words`.
+ *                         Record left, then drop the leftmost word and slide.
+ *
+ * WHY IT WORKS
+ *   - Invariant: seen[x] <= need[x] for all x after the shrink loop.
+ *   - If also count == m, then seen == need exactly, so it's a valid answer.
+ *   - left and right only move forward; each block is added once and removed
+ *     at most once per offset.
+ *
+ * COMPLEXITY
+ *   Time : O(n * k)   (preprocessing O(n*k) + sliding O(n) integer steps)
+ *   Space: O(n + m)
+ *
+ * How to develop intuition for problems like this
+ *
+ * 1. Notice what is “wasted work” in the brute force.
+ * Start with the naive solution and ask: what am I recomputing?
+ * Here, consecutive windows share m - 1 words, yet brute force rebuilds the map every time.
+ * Almost every optimization is “stop recomputing the overlap.” That question alone leads you to sliding window, prefix sums, DP, and so on.
+ *
+ * 2. When sliding by 1 feels broken, ask what the natural unit of movement is.
+ * You got confused because sliding by 1 character breaks the structure
+ * (shifting by 1 changes every word boundary). The fix was to slide by k instead,
+ * which is the natural unit, since the answer is built from blocks of size k.
+ * When a window seems to “not transition cleanly,” look for a different step size
+ * or a different unit (words instead of characters).
+ *
+ * 3. If one pass can’t cover all cases, split into independent classes.
+ * Sliding by k only covers starts that are o mod k for one o. Rather than hacking around it,
+ * split into k independent passes. This “group by residue mod k” trick appears all over:
+ * strided arrays, circular problems, scheduling, grid problems.
+ *
+ * 4. Reduce a hard domain to an easy one.
+ * Strings with variable hashing were slow, so we mapped them to integers once and worked on
+ * an integer array. Whenever the inner loop feels heavy, ask whether you can preprocess into
+ * a simpler representation.
+ *
+ * 5. Identify the invariant.
+ * For sliding windows, write down what is always true about the window (seen[x] <= need[x]).
+ * Then check that adding, shrinking, and the answer condition each preserve or use it.
+ * If you can state the invariant, the code almost writes itself.
+ *
+ * Write the brute force and its complexity.
+ * Find the redundancy in it (what is recomputed).
+ * Pick a known pattern that removes that redundancy
+ * (sliding window, two pointers, hashing, prefix sums).
+ * Test it on a tiny example by hand and find where it breaks.
+ * Fix the break by changing the unit, splitting into cases, or preprocessing.
+ * Building the pattern library
+ *
+ * Minimum Window Substring (the standard window plus frequency map)
+ * Longest Substring Without Repeating Characters (shrink-while-invalid)
+ * Permutation in String and Find All Anagrams in a String (fixed-size window with counts;
+ * this problem is the word-level version of these)
+ * Subarrays with K Different Integers (window counting)
+ *
+ */
 class Solution {
   public:
   vector<int> findSubstring(string s, vector<string>& words) {
-    int n = sz(s), m = sz(words), k = sz(words[0]);
-    UMap<string, int> mp;
-    trav(w, words) mp[w]++;
-    auto mp1 = mp;
-
     vector<int> res;
+    int n = s.size(), m = words.size(), k = words[0].size();
+    if (n < m * k) return res;
 
-    for (int i = 0, j = 0; j + k < n; ) {
-      auto str = s.substr(j, k);
-
-      if (mp.find(str) != mp.end()) {
-
-      } else {
-        mp = mp1;
-        i = ++j;
-      }
+    unordered_map<string, int> ids;
+    vi need;
+    trav(w, words) {
+      auto [it, inserted] = ids.try_emplace(w, sz(need));
+      if (inserted) need.pb(0);
+      need[it->ss]++;
     }
 
+    int d = need.size();
+
+    vector<int> id(n - k + 1, -1);
+    for (int i = 0; i + k <= n; i++) {
+      auto it = ids.find(s.substr(i, k));
+      if (it != ids.end()) id[i] = it->second;
+    }
+
+    for (int o = 0; o < k; o++) {
+      vector<int> seen(d, 0);
+      int left = o, count = 0;
+
+      for (int right = o; right + k <= n; right += k) {
+        int w = id[right];
+
+        if (w == -1) {
+          fill(seen.begin(), seen.end(), 0);
+          count = 0;
+          left = right + k;
+          continue;
+        }
+
+        seen[w]++;
+        count++;
+
+        while (seen[w] > need[w]) {
+          seen[id[left]]--;
+          count--;
+          left += k;
+        }
+
+        if (count == m) {
+          res.push_back(left);
+          seen[id[left]]--;
+          count--;
+          left += k;
+        }
+      }
+    }
     return res;
   }
 };
