@@ -42,6 +42,12 @@ struct chash {
   template <class A, class B> size_t operator()(const pair<A, B>& p) const {
     return sm((*this)(p.first) * 31 + (*this)(p.second));
   }
+  size_t operator()(const string& s) const {
+    static const u64 R = chrono::steady_clock::now().time_since_epoch().count();
+    u64 h = R;
+    for (unsigned char c : s) h = sm(h + c);
+    return h;
+  }
 };
 template <class K, class V> using UMap = unordered_map<K, V, chash>;
 template <class K> using USet = unordered_set<K, chash>;
@@ -58,6 +64,7 @@ template <class T> using OST = tree<T, null_type, less<T>, rb_tree_tag, tree_ord
 /* Constants & Small Utilities                          */
 /********************************************************/
 constexpr int dir[5] = { 1, 0, -1, 0, 1 };
+constexpr int dir8[9] = { 1, 1, 0, -1, -1, 1, -1, 0, 1 };
 constexpr i32 imax = numeric_limits<i32>::max();
 constexpr i32 imin = numeric_limits<i32>::min();
 constexpr i64 lmax = numeric_limits<i64>::max();
