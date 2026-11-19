@@ -449,9 +449,65 @@ public:
 };
 */
 
+/*
+* LeetCode 117: Populating Next Right Pointers in Each Node II
+* 
+* IDEA
+* ----
+* Build the `next` pointers one level at a time, top to bottom.
+* If level k already has its `next` pointers set, level k is a linked list
+* we can walk left to right without a queue. While walking it, we look at
+* each node's children and chain them together. That builds level k+1's
+* list. Then we move down and repeat.
+* 
+* VARIABLES
+* ---------
+* cur    : leftmost node of the level we are currently walking.
+* par    : the node we are visiting on the current level (walks via ->next).
+* dummy  : fake head node sitting before the first node of the NEXT level.
+*          It removes the special case "is this the first child on this level?"
+* child  : tail of the next level's chain built so far (starts at dummy).
+* 
+* STEPS PER LEVEL
+* ---------------
+* 1. Create a fresh dummy so the next level's list starts empty.
+* 2. Walk the current level using par = par->next.
+* 3. For each par, if it has a left child, attach it after `child` and
+*    advance `child`. Do the same for the right child.
+*    Because `child` is shared across the whole level, the last child of
+*    one parent automatically links to the first child of the next parent
+*    that has any children (this handles missing children / gaps).
+* 4. After the walk, dummy->next is the leftmost node of the next level.
+*    Set cur = dummy->next and go down. If it is null, there is no next
+*    level, so the loop ends.
+* 
+* COMPLEXITY
+* ----------
+* Time  O(n): every node is attached once and visited once.
+* Space O(1): no queue, only a few pointers (the dummy is reused per level).
+*/
 class Solution {
   public:
   Node* connect(Node* root) {
-    
+    Node* cur = root;
+
+    while (cur) {
+      Node dummy(-1); // stack allocated, so no leak; fresh per level
+
+      for (Node* par = cur, *child = &dummy; par; par = par->next) {
+        if (par->left) {
+          child->next = par->left;
+          child = child->next;
+        }
+        if (par->right) {
+          child->next = par->right;
+          child = child->next;
+        }
+      }
+
+      cur = dummy.next;
+    }
+
+    return root;
   }
 };
