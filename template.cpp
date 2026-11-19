@@ -219,7 +219,7 @@ template <class N> void _print_tree(const N* root) {
   DOUT << "[";
   for (size_t i = 0; i < v.size(); i++) { if (i) DOUT << ", "; if (v[i]) _print(v[i]->val); else DOUT << "null"; }
   DOUT << "]";
-  }
+}
 
 template <class N> void _print_node(const N& n) {
   _Dg g;
