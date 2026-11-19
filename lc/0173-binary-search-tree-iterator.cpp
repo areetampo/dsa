@@ -445,18 +445,54 @@ static const int _fast_io = [] () {
 class BSTIterator {
   public:
 
-  
+  TreeNode* cur;
+  vector<pair<TreeNode*, int>> st; // cur's par, cur is: -1 = left, 0 = none, 1 = right
 
   BSTIterator(TreeNode* root) {
+    cur = root;
+    st.pb({nullptr, 0});
 
+    while (cur->left) {
+      st.pb({cur, -1});
+      cur = cur->left;
+    }
   }
 
-  int next() {
+  int next() { // get cur and move to next
+    int res = cur->val; // next() calls are always valid so cur != nullptr
 
+    if (sz(st) == 1) {
+      // wont happen as next() calls are always valid
+      // so when root got removed was when right subtree was explored
+    }
+
+    while (sz(st) > 1) {
+      cur = st.back().ff;
+      bool left_explored = st.back().ss == -1;
+      st.pop_back();
+
+      if (left_explored && cur->right) {
+        st.pb({cur, 1});
+        cur = cur->right;
+
+        while (cur->left) {
+          st.pb({cur, -1});
+          cur = cur->left;
+        }
+
+        break;
+      } else if (left_explored) { // this cur is correctly next
+        break;
+      } else { // right explored go up
+        continue;
+      }
+    }
+
+    return res;
   }
 
   bool hasNext() {
-
+    return !!cur;
   }
 };
 
