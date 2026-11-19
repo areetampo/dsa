@@ -442,57 +442,42 @@ static const int _fast_io = [] () {
  *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
  * };
  */
+/*
+* Idea: the stack holds the "pending" ancestors, i.e. nodes we went left from
+* and haven't visited yet. The top is always the next in-order node.
+*
+* pushLeft(node): push node and its whole left chain, so the top is the
+* smallest value in that subtree.
+*
+* next(): pop the top (the answer). If it has a right subtree, that subtree's
+* values come next, so pushLeft(its right child). Everything else on the stack
+* is still an ancestor waiting its turn.
+*
+* hasNext(): there is a next value iff the stack is non-empty.
+*
+* Time:  next() is amortized O(1) (each node is pushed and popped once).
+* Space: O(h), where h is the tree height.
+*/
 class BSTIterator {
   public:
 
-  TreeNode* cur;
-  vector<pair<TreeNode*, int>> st; // cur's par, cur is: -1 = left, 0 = none, 1 = right
-
-  BSTIterator(TreeNode* root) {
-    cur = root;
-    st.pb({nullptr, 0});
-
-    while (cur->left) {
-      st.pb({cur, -1});
-      cur = cur->left;
-    }
+  void pushLeft(TreeNode* node) {
+    for (; node; node = node->left) st.pb(node);
   }
 
-  int next() { // get cur and move to next
-    int res = cur->val; // next() calls are always valid so cur != nullptr
+  vector<TreeNode*> st;
 
-    if (sz(st) == 1) {
-      // wont happen as next() calls are always valid
-      // so when root got removed was when right subtree was explored
-    }
+  BSTIterator(TreeNode* root) { pushLeft(root); }
 
-    while (sz(st) > 1) {
-      cur = st.back().ff;
-      bool left_explored = st.back().ss == -1;
-      st.pop_back();
-
-      if (left_explored && cur->right) {
-        st.pb({cur, 1});
-        cur = cur->right;
-
-        while (cur->left) {
-          st.pb({cur, -1});
-          cur = cur->left;
-        }
-
-        break;
-      } else if (left_explored) { // this cur is correctly next
-        break;
-      } else { // right explored go up
-        continue;
-      }
-    }
-
-    return res;
+  int next() {
+    TreeNode* node = st.back();
+    st.pop_back();
+    pushLeft(node->right);
+    return node->val;
   }
 
   bool hasNext() {
-    return !!cur;
+    return !st.empty();
   }
 };
 
