@@ -442,9 +442,94 @@ static const int _fast_io = [] () {
  *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
  * };
  */
+/*
+* LeetCode 222: Count Complete Tree Nodes, O(log^2 n)
+*
+* SETUP
+* -----
+* Let ht = height of the tree in edges (found by walking the leftmost path).
+* In a complete tree, every level above the bottom one (levels 0..ht-1) is
+* completely full, so those levels contain exactly 2^ht - 1 nodes.
+* Only the bottom level (depth ht) is partial. It has 2^ht possible slots,
+* numbered 0..2^ht-1 from left to right.
+*
+* KEY PROPERTY
+* ------------
+* In a complete tree, the filled bottom-level slots always form a PREFIX:
+* slots 0..k-1 are filled and slots k..2^ht-1 are empty.
+* So the problem is just to find k. Answer = (2^ht - 1) + k.
+*
+* WHY IT IS A BINARY SEARCH (the "partitioning")
+* ----------------------------------------------
+* Every subtree covers a contiguous block of bottom-level slots, and its left
+* and right children split that block exactly in half. Because the filled
+* slots form a prefix, we only need to know whether the LAST slot of the left
+* half is filled:
+*
+*   - Filled: the prefix reaches the end of the left half, so every slot in
+*     the left half is filled. Add all of them at once (2^(ht - depth - 1)),
+*     then continue the search in the right half.
+*   - Empty: the prefix ends inside the left half, so the right half has
+*     nothing. Continue the search in the left half.
+*
+* Either way, half of the remaining slots are decided each step, like a
+* binary search over slot numbers. After ht steps, one slot is left.
+*
+* HOW TO TEST "LAST SLOT OF THE LEFT HALF IS FILLED"
+* --------------------------------------------------
+* The last bottom slot of the left subtree is the end of its RIGHT spine
+* (left, left->right, left->right->right, ...). Walk that spine and compute
+* the depth where it ends. If it ends at depth ht, that slot exists, so the
+* left subtree is perfect down to the bottom level. Otherwise it does not.
+*
+* COMPLEXITY
+* ----------
+* ht = O(log n) iterations, each walking a spine of length up to ht.
+* Time O(log^2 n), space O(1). This is better than O(n) as required.
+*/
 class Solution {
   public:
   int countNodes(TreeNode* root) {
-    
+    if (!root) return 0;
+
+    // Height in edges via the leftmost path. The leftmost path always
+    // reaches the deepest level in a complete tree.
+    int ht = -1;
+    for (TreeNode* cur = root; cur; cur = cur->left) ht++;
+
+    // Number of filled slots on the bottom level (the prefix length k).
+    int last_level = 0;
+
+    // Root of the subtree whose slot block we are still searching.
+    TreeNode* cur = root;
+
+    // Each iteration halves the block of undecided bottom-level slots.
+    for (int depth = 0; depth < ht; depth++) {
+      TreeNode* left = cur->left, * right = cur->right;
+
+      // Depth where the right spine of `left` ends.
+      // `left` itself is at depth + 1, so after walking the spine,
+      // d is the depth of the last node on it.
+      int d = depth;
+      for (TreeNode* r = left; r; r = r->right) d++;
+
+      if (d == ht) {
+        // The last slot of the left half is filled, so the whole
+        // left half is filled. Its block size is 2^(ht - depth - 1).
+        last_level += 1 << (ht - (depth + 1));
+        cur = right; // the answer's remainder lies in the right half
+      } else {
+        // The left half's last slot is empty, so the right half is
+        // entirely empty. The prefix ends inside the left half.
+        cur = left;
+      }
+    }
+
+    // The loop ends with cur at depth ht, a single bottom-level slot.
+    // If the node exists, that slot is filled and it was not counted.
+    if (cur) last_level++;
+
+    // Full levels above the bottom + filled slots on the bottom.
+    return (1 << ht) - 1 + last_level;
   }
 };
