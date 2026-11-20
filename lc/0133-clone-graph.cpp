@@ -541,44 +541,46 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
-/*
-// Definition for a Node.
+// /*
+// // Definition for a Node.
 class Node {
-public:
-    int val;
-    vector<Node*> neighbors;
-    Node() {
-        val = 0;
-        neighbors = vector<Node*>();
-    }
-    Node(int _val) {
-        val = _val;
-        neighbors = vector<Node*>();
-    }
-    Node(int _val, vector<Node*> _neighbors) {
-        val = _val;
-        neighbors = _neighbors;
-    }
+  public:
+  int val;
+  vector<Node*> neighbors;
+  Node() {
+    val = 0;
+    neighbors = vector<Node*>();
+  }
+  Node(int _val) {
+    val = _val;
+    neighbors = vector<Node*>();
+  }
+  Node(int _val, vector<Node*> _neighbors) {
+    val = _val;
+    neighbors = _neighbors;
+  }
 };
-*/
+// */
 
 class Solution {
   public:
   Node* cloneGraph(Node* node) {
-    USet<int> vis;
+    if (!node) return nullptr;
 
-    function<Node*(Node*)> dfs = [&] (Node* cur) -> Node* {
-      Node* r = new Node(cur->val);
-      vis.insert(cur->val);
+    unordered_map<Node*, Node*> map;
+
+    function<void(Node*)> dfs = [&] (Node* cur) -> void {
+      map[cur] = new Node(cur->val);
 
       trav(nb, cur->neighbors) {
-        if (vis.find(nb->val) != vis.end()) continue;
-        r->neighbors.pb(dfs(nb));
+        if (!map.contains(nb)) dfs(nb);
+        map[cur]->neighbors.pb(nb);
+        map[nb]->neighbors.pb(cur);
       }
-
-      return r;
     };
 
-    return dfs(node);
+    dfs(node);
+
+    return map[node];
   }
 };
