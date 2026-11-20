@@ -541,8 +541,8 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
-// /*
-// // Definition for a Node.
+/*
+// Definition for a Node.
 class Node {
   public:
   int val;
@@ -574,8 +574,7 @@ class Solution {
 
       trav(nb, cur->neighbors) {
         if (!map.contains(nb)) dfs(nb);
-        map[cur]->neighbors.pb(nb);
-        map[nb]->neighbors.pb(cur);
+        map[cur]->neighbors.pb(map[nb]);
       }
     };
 
