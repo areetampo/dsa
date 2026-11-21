@@ -575,11 +575,22 @@ class WordDictionary {
     st.pb({ 0, root });
 
     while (!st.empty()) {
-      auto [idx, tn] = st.back(); st.pop_back();
-      if (word[idx] != '.' && !tn->child[word[idx] - 1]) continue;
-      if (idx == sz(word) - 1) return true;
+      auto [idx, cur] = st.back(); st.pop_back();
 
+      if (idx == sz(word)) {
+        if (cur->eow) return true;
+        continue;
+      }
 
+      if (word[idx] != '.') {
+        if (cur->child[word[idx] - 97])
+          st.pb({ idx + 1, cur->child[word[idx] - 97] });
+      } else {
+        trav(ch, cur->child) {
+          if (ch)
+            st.pb({ idx + 1, ch });
+        }
+      }
     }
 
     return false;
