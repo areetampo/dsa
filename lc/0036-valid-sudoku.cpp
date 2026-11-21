@@ -10,7 +10,7 @@ public:
                         return false;
                     used1[i][num] = used2[j][num] = used3[k][num] = 1;
                 }
-        
+
         return true;
     }
 };
