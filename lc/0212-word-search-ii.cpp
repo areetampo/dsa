@@ -546,10 +546,10 @@ class Solution {
 
   struct TrieNode {
     bool eow;
-    array<TrieNode*, 26> child;
+    array<TrieNode*, 26> chars;
     TrieNode() {
       eow = false;
-      fill(all(child), nullptr);
+      fill(all(chars), nullptr);
     }
   };
 
@@ -558,10 +558,10 @@ class Solution {
   void insert(string word) {
     TrieNode* cur = root;
     trav(c, word) {
-      if (!cur->child[c - 97]) {
-        cur->child[c - 97] = new TrieNode();
+      if (!cur->chars[c - 97]) {
+        cur->chars[c - 97] = new TrieNode();
       }
-      cur = cur->child[c - 97];
+      cur = cur->chars[c - 97];
     }
     cur->eow = true;
   }
@@ -569,10 +569,10 @@ class Solution {
   bool search(string word) {
     TrieNode* cur = root;
     trav(c, word) {
-      if (!cur->child[c - 97]) {
+      if (!cur->chars[c - 97]) {
         return false;
       }
-      cur = cur->child[c - 97];
+      cur = cur->chars[c - 97];
     }
     return cur->eow;
   }
@@ -581,5 +581,41 @@ class Solution {
     int n = sz(g), m = sz(g[0]);
     root = new TrieNode();
     trav(i, words) insert(i);
+
+    vs res;
+
+    function<void(int, int, TrieNode*, string&)> dfs = [&] (int i, int j, TrieNode* cur, string& s) -> void {
+      char c = g[i][j];
+      g[i][j] = '.'; // mark vis
+
+      if (cur->chars[c - 97]) {
+        s += c;
+
+        if (cur->chars[c - 97]->eow) {
+          res.pb(s);
+          cur->chars[c - 97]->eow = false; // dont take this word again
+        }
+
+        fo(k, 0, 4) {
+          int ni = i + dir[k], nj = j + dir[k + 1];
+          if (min(ni, nj) < 0 || ni == n || nj == m || g[ni][nj] == '.') continue;
+          // will return back if cur->chars[c - 97]->chars[g[ni][nj] - 97] is null
+          dfs(ni, nj, cur->chars[c - 97], s);
+        }
+
+        s.pop_back();
+      }
+
+      g[i][j] = c; // revert vis state
+    };
+
+    fo(i, 0, n) {
+      fo(j, 0, m) {
+        string s = "";
+        dfs(i, j, root, s);
+      }
+    }
+
+    return res;
   }
 };
