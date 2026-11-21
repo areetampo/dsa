@@ -556,19 +556,27 @@ class Solution {
     vector<vector<pair<int, double>>> g(n);
     fo(i, 0, sz(equations)) {
       g[ids[equations[i][0]]].pb({ ids[equations[i][1]], values[i] });
+      g[ids[equations[i][1]]].pb({ ids[equations[i][0]], (double)1 / values[i] });
     }
+    // dbg(g);
 
     vector<double> res;
 
     function<double(int, int)> path_product = [&] (int u, int v) -> double {
-      queue<pair<int, double>> q;
-      q.push({ u, 1 });
+      vector<pair<int, double>> st = { { u, 1 } };
+      vb vis(n, 0);
 
-      fo(i, 0, sz(q)) {
-        auto [f, r] = q.front(); q.pop();
-        if (f == v) return r;
+      while (!st.empty()) {
+        // dbg(st);
+        auto [cur, r] = st.back(); st.pop_back();
+        if (cur == v) return r;
 
-        trav(j, g[f]) q.push({ j.ff, r * j.ss });
+        vis[cur] = 1;
+
+        trav(nb, g[cur]) {
+          if (vis[nb.ff]) continue;
+          st.pb({ nb.ff, r * nb.ss });
+        }
       }
 
       return -1;
@@ -576,10 +584,14 @@ class Solution {
 
     trav(i, queries) {
       auto& x = i[0], y = i[1];
-      if (!ids.contains(x) || !ids.contains(y)) { res.pb(-1); continue; }
+      if (!ids.contains(x) || !ids.contains(y)) {
+        res.pb(-1);
+        continue;
+      }
 
       int u = ids[x], v = ids[y];
       res.pb(path_product(u, v));
+      // sl;
     }
 
     return res;
