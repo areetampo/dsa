@@ -541,9 +541,60 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * CORE IDEA
+ * ---------
+ * Each element x can end up as either x or x+1 (raised by at most 1).
+ * We want the longest run of consecutive values we can cover, where each
+ * element fills at most one value.
+ *
+ * dp[v] = length of the longest consecutive run ending exactly at value v,
+ *         using only the elements processed so far.
+ *
+ * Process values in increasing order. For each element with value v there
+ * are two choices:
+ *   1. Raise it to v+1: it extends a run ending at v   -> dp[v+1] = dp[v] + 1
+ *   2. Keep it at v:    it extends a run ending at v-1 -> dp[v]   = dp[v-1] + 1
+ * The "+1" is this element joining the run. If no run ends at the previous
+ * value, dp is 0 and the run is just this element (length 1), so no base-case
+ * initialisation is needed.
+ *
+ * WHY dp[v+1] IS UPDATED BEFORE dp[v]
+ * -----------------------------------
+ * The shift line READS dp[v], and the stay line WRITES dp[v]. If we wrote
+ * dp[v] first, the shift would see a run that already contains this same
+ * element and count it twice (e.g. [1] would wrongly give {1,2}, length 2).
+ * Updating dp[v+1] first makes both choices read the state from before this
+ * element was processed.
+ *
+ * DUPLICATES
+ * ----------
+ * A second copy of v reads the dp[v] left by the first copy. That is valid:
+ * one copy stays at v and the other becomes v+1, so duplicates chain
+ * naturally. A third copy adds nothing new (only v and v+1 are reachable),
+ * so at most 2 copies per value are processed.
+ *
+ * COMPLEXITY
+ * ----------
+ * Using a frequency table instead of sorting: O(maxValue + n) time,
+ * O(maxValue) space. Values can reach 1e6 + 1 after the raise.
+ */
 class Solution {
   public:
   int maxSelectedElements(vector<int>& a) {
+    const int M = *max_element(all(a)) + 2;
+    vector<int> cnt(M + 2, 0), dp(M + 2, 0);
+    trav(i, a) cnt[i]++;
 
+    int res = 1;
+    fo(v, 1, M + 1) {
+      fo(c, 0, min(cnt[v], 2)) {
+        dp[v + 1] = dp[v] + 1; // this copy becomes v+1
+        dp[v] = dp[v - 1] + 1; // this copy stays v
+        smax(res, max(dp[v], dp[v + 1]));
+      }
+    }
+
+    return res;
   }
 };
