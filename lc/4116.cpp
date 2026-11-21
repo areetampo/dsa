@@ -541,3 +541,36 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  vector<string> assignUmbrella(vector<int>& a) {
+    int n = sz(a), alice = 0, bob = 0;
+
+    function<string(int)> s = [&] (int i) {
+      return i == 0 ? "None" : i == 1 ? "Alice" : "Bob";
+    };
+
+    vs res;
+
+    fo(i, 0, n - 1) {
+      int x = a[i], y = a[i + 1];
+      if (!x && !y) {
+        res.pb(s(0));
+      } else if (x && !y) {
+        res.pb(s(-1));
+        bob++;
+      } else if (x && y) {
+        if (alice <= bob) {
+          res.pb(s(1)); alice++;
+        } else {
+          res.pb(s(-1)); bob++;
+        }
+      } else res.pb(s(0));
+    }
+
+    if (a.back()) res.pb(s(-1));
+    else res.pb(s(0));
+
+    return res;
+  }
+};
