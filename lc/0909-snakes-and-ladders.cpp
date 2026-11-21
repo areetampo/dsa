@@ -564,18 +564,17 @@ class Solution {
       return g[row][col] == -1 ? x : g[row][col];
     };
 
-    int steps = 0;
-    queue<int> q;
-    q.push(1);
+    queue<pii> q;
+    q.push({ 1, 0 });
 
     while (!q.empty()) {
-      int cur = q.front(); q.pop();
+      auto [cur, steps] = q.front(); q.pop();
       if (cur == n * n) return steps;
 
-      steps++;
-
       fo(i, 1, 7) {
-        q.push(dest(cur + i));
+        if (cur + i <= n * n) {
+          q.push({ dest(cur + i), steps + 1 });
+        }
       }
     }
 
