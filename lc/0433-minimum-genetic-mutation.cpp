@@ -543,46 +543,32 @@ static const int _fast_io = [] () {
 
 class Solution {
   public:
-  int snakesAndLadders(vector<vector<int>>& g) {
-    int n = sz(g);
+  int minMutation(string s, string t, vector<string>& bank) {
+    int n = 8, m = sz(bank);
+    char gene[4] = { 'A', 'C', 'G', 'T' };
 
-    // given:
-    // [n^2, n^2 - 1..., n^2 - n + 1]
-    // [n^2 - 2n + 1, ... , n^2 - n]
-    // [2n ... n + 1]
-    // [1 ... n]
-    // convert to 1d array of 1 to n^2
-    // -1 represents no snake/ladder
-    // +ve represents next position to go to
-
-    // simple bfs, no dikstra as every move has same cost = 1
-    vb vis(n * n + 1, 0);
-
-    function<int(int)> dest = [&] (int x) -> int {
-      int row = n - 1 - (x / n - (x % n == 0)),
-        col = n & 1 ?
-        row & 1 ? n - 1 - ((x - 1) % n) : (x - 1) % n :
-        row & 1 ? (x - 1) % n : n - 1 - ((x - 1) % n);
-
-      int y = g[row][col];
-      return y == -1 ? x : y;
-    };
-
-    int steps = 0, goal = n * n;
-    queue<int> q;
-    q.push(1);
-    vis[1] = 1;
+    int steps = 0;
+    queue<string> q;
+    q.push(s);
+    USet<string> can_vis(all(bank));
 
     while (!q.empty()) {
       int szz = sz(q);
       while (szz--) {
-        int cur = q.front(); q.pop();
-        if (cur == goal) return steps;
+        string cur = q.front(); q.pop();
+        if (cur == t) return steps;
 
-        fo(k, 1, 7) {
-          if (cur + k > goal || vis[cur + k]) continue;
-          vis[cur + k] = 1;
-          q.push(dest(cur + k));
+        trav(c, gene) {
+          trav(ch, cur) {
+            if (ch == c) continue;
+            char t = ch;
+            ch = c;
+            if (can_vis.contains(cur)) {
+              can_vis.erase(cur);
+              q.push(cur);
+            }
+            ch = t;
+          }
         }
       }
 
