@@ -553,7 +553,10 @@ class Solution {
     // [1 ... n]
     // convert to 1d array of 1 to n^2
     // -1 represents no snake/ladder
-    // non -1 represents next position to go to
+    // +ve represents next position to go to
+
+    // simple bfs, no dikstra as every move has same cost = 1
+    vb vis(n * n + 1, 0);
 
     function<int(int)> dest = [&] (int x) -> int {
       int row = n - 1 - (x / n - (x % n == 0)),
@@ -561,21 +564,29 @@ class Solution {
         row & 1 ? n - 1 - ((x - 1) % n) : (x - 1) % n :
         row & 1 ? (x - 1) % n : n - 1 - ((x - 1) % n);
 
-      return g[row][col] == -1 ? x : g[row][col];
+      int y = g[row][col];
+      return y == -1 ? x : y;
     };
 
-    queue<pii> q;
-    q.push({ 1, 0 });
+    int steps = 0, goal = n * n;
+    queue<int> q;
+    q.push(1);
+    vis[1] = 1;
 
     while (!q.empty()) {
-      auto [cur, steps] = q.front(); q.pop();
-      if (cur == n * n) return steps;
+      int szz = sz(q);
+      while (szz--) {
+        int cur = q.front(); q.pop();
+        if (cur == goal) return steps;
 
-      fo(i, 1, 7) {
-        if (cur + i <= n * n) {
-          q.push({ dest(cur + i), steps + 1 });
+        fo(k, 1, 7) {
+          if (cur + k > goal || vis[cur + k]) continue;
+          vis[cur + k] = 1;
+          q.push(dest(cur + k));
         }
       }
+
+      steps++;
     }
 
     return -1;
