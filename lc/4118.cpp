@@ -541,3 +541,68 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  int minOperations(vector<int>& a) {
+    int n = sz(a), MAXV = 2000;
+
+    if (n <= 2) return -1;
+
+    vi up(MAXV + 2, INF), down(MAXV + 2, INF);
+
+    auto cost = [&] (int x, int y) -> i64 {
+      return abs(x - y);
+    };
+
+    auto relax = [&] (i64& x, i64 y) {
+      if (y < x) x = y;
+    };
+
+    fo(x, 1, MAXV + 1) {
+      up[x] = cost(a[0], x);
+    }
+
+    fo(pos, 1, n) {
+      vi next_up(MAXV + 2, INF);
+      vi next_down(MAXV + 2, INF);
+
+      i64 best_left = INF;
+
+      fo(cur, 1, MAXV + 1) {
+        if (best_left != INF) {
+          i64 add = cost(a[pos], cur);
+          next_up[cur] = best_left + add;
+        }
+
+        relax(best_left, up[cur]);
+      }
+
+      i64 best_right = INF;
+
+      fr(cur, MAXV, 1) {
+        i64 candidate = min(up[cur], down[cur]);
+
+        if (pos >= 2 && best_right != INF) {
+          next_down[cur] = best_right + cost(a[pos], cur);
+        }
+
+        relax(best_right, candidate);
+      }
+
+      up.swap(next_up);
+      down.swap(next_down);
+    }
+
+    i64 res = INF;
+
+    auto take_min = [&] (const vi& dp) {
+      fo(x, 1, MAXV + 1) {
+        relax(res, dp[x]);
+      }
+    };
+
+    take_min(down);
+
+    return res == INF ? -1 : res;
+  }
+};
