@@ -504,5 +504,35 @@ void precomp() {
 }
 
 void solve() {
+  int n; cin >> n; vi a = iv(n);
 
+  vi left_smaller(n), right_smaller(n);
+
+  vi st;
+  fo(i, 0, n) {
+    while (!st.empty() && a[st.back()] > a[i]) st.pop_back();
+    left_smaller[i] = st.empty() ? -1 : st.back();
+    st.pb(i);
+  }
+
+  st.clear();
+  fr(i, n - 1, 0) {
+    while (!st.empty() && a[st.back()] > a[i]) st.pop_back();
+    right_smaller[i] = st.empty() ? n : st.back();
+    st.pb(i);
+  }
+
+  i64 res = 0;
+  fo(i, 0, n) {
+    i64 a = i - left_smaller[i], b = right_smaller[i] - i;
+    // 0 <= x < a, 0 <= y < b
+    // x and y choosen as subarr range left/right of a[i]
+    // min = 1 means smaller to immediate left/right/both, take all possible subarrs:
+    // 5 8 7 6 4 3: for 4, 3 is next smaller so not taken and 4,6 4,7 6 4,.. taken
+    // for say 5 8 7 6 4 9 10: min > 1: only len = 1, b-a-1 = 2 subarrs valid
+    // as all other len have more than 1 subarr with a[i] as min
+    res += (min(a, b) == 1) ? a + b - 1 : 2;
+  }
+
+  cout << res << "\n";
 }
