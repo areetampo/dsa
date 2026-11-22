@@ -504,5 +504,38 @@ void precomp() {
 }
 
 void solve() {
+  int N = 101; // o + t <= 100 (50 twos, 50 + opers)
+  i64 ones, twos, n; string s; cin >> ones >> twos >> n >> s;
 
+  vector<vb> dp(N, vb(N, 0));
+  dp[ones][twos] = 1;
+  i64 res = ones + twos;
+
+  trav(c, s) {
+    vector<vb> next = dp;
+
+    fo(o, 0, N) {
+      fo(t, 0, N) {
+        if (!dp[o][t] || o + t == 0) continue;
+        // + index is safe since o + t <= 100 and dp[o][t] = 1 guarded it
+        if (c == '+') {
+          // twos exist: get another 2 so twos inc
+          if (t > 0) next[o][t + 1] = 1;
+          // ones exist: make a 2, reduces the number of ones
+          if (o > 0) next[o - 1][t + 1] = 1;
+        } else {
+          // twos exist: make a 1, reduces the number of twos
+          if (t > 0) next[o + 1][t - 1] = 1;
+          // ones exist: its gone so reduce ones
+          if (o > 0) next[o - 1][t] = 1;
+        }
+      }
+    }
+
+    fo(o, 0, N) fo(t, 0, N) if (next[o][t]) smax(res, o + t);
+
+    dp = move(next);
+  }
+
+  cout << res << "\n";
 }
