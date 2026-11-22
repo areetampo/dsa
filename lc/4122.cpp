@@ -541,3 +541,47 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  vector<long long> earliestActivationTimes(
+    int n,
+    vector<vector<int>>& edges,
+    vector<int>& requiredSignals
+  ) {
+    vector<vector<pair<int, int>>> g(n);
+    trav(e, edges) {
+      g[e[0]].pb({ e[1], e[2] });
+    }
+
+    vector<int> incoming(n, 0);
+    vb is_activated(n, 0);
+    vi res(n, -1);
+
+    PQG<pii> events;
+
+    auto activate_next = [&] (int node, i64 time) {
+      is_activated[node] = 1;
+      res[node] = time;
+
+      trav(e, g[node]) {
+        auto [dest, delay] = e;
+        events.push({ time + delay, dest });
+      }
+    };
+
+    activate_next(0, 0);
+
+    while (!events.empty()) {
+      auto [time, node] = events.top();
+      events.pop();
+
+      if (is_activated[node]) continue;
+
+      if (++incoming[node] == requiredSignals[node]) {
+        activate_next(node, time);
+      }
+    }
+
+    return res;
+  }
+};
