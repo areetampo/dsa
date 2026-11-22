@@ -504,5 +504,5 @@ void precomp() {
 }
 
 void solve() {
-
+  
 }
