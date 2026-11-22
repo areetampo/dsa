@@ -504,5 +504,6 @@ void precomp() {
 }
 
 void solve() {
-
+  i64 n, x; cin >> n >> x;
+  vi a = iv(n);
 }
