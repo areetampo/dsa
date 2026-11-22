@@ -504,5 +504,7 @@ void precomp() {
 }
 
 void solve() {
-  
+  i64 n; cin >> n;
+
+  yn(n % 4 != 2);
 }
