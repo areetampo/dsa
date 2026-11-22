@@ -552,7 +552,7 @@ class Solution {
       j = i;
       while (j + 1 < n && a[j + 1] == a[i]) j++;
 
-      if (0 < min(i, j) && max(i, j) < n - 1) {
+      if (j > 0 && i < n - 1) {
         smin(res, ((i64)i + (n - 1 - j)) * a[i]);
       }
     }
