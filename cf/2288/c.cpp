@@ -506,4 +506,21 @@ void precomp() {
 void solve() {
   i64 n, x; cin >> n >> x;
   vi a = iv(n);
+
+  trav(i, a) {
+    i = ceil_div(i, x); // attacks to die for each
+  }
+
+  sort(all(a));
+
+  i64 d = 0;
+
+  // a[i]: it can't die before it has taken a[i] hits.
+  // d + 1: it must die in a different attack than the previous
+  // if two died in the same attack, you get only one free attack from them instead of two
+  fo(i, 0, n - 1) d = max(a[i], d + 1);
+
+  // every attack in which a youkai dies is free, and there are exactly n - 1 of those
+  // the other d - (n - 1) attacks kill nobody, so each costs 1 spell card
+  cout << d - (n - 1) << "\n";
 }
