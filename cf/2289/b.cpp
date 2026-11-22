@@ -506,15 +506,13 @@ void precomp() {
 void solve() {
   i64 n, k; cin >> n >> k; vi a = iv(n);
 
-  vi run(n, 1);
-  fr(i, n - 2, 0) {
-    if (a[i] == a[i + 1]) run[i] = run[i + 1] + 1;
-  }
+  int w = n - k + 1;
+  int prev = -1, cnt = 0, res = 0;
 
-  i64 w = n - k + 1, res = 0;
-
-  fo(i, 0, k) {
-    if (run[i] >= w) res++;
+  fo(i, 0, n) {
+    cnt = (a[i] == prev) ? cnt + 1 : 1;
+    if (cnt >= w) res++; // outside the consecutive el window, theres < k el
+    prev = a[i];
   }
 
   cout << res << "\n";
