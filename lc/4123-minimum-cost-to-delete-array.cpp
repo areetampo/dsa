@@ -541,20 +541,48 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+* CORE LOGIC
+* - Each operation deletes a block whose two endpoints are distinct elements, and
+*   an element can be an endpoint only once, since it is gone afterward.
+* - Index 0 and index n-1 can never be strictly inside a block, so both are always
+*   endpoints. The set S of all endpoints therefore has even size and contains 0
+*   and n-1.
+* - Any such S is achievable at total cost = sum of a[S]: pair the elements of S
+*   outside-in and delete the innermost block first. Elements not in S are
+*   swallowed for free.
+* - So answer = a[0] + a[n-1] + (minimum sum of an EVEN-size subset of a[1..n-2],
+*   where the empty subset is allowed).
+* - Greedy for that subset: sort the middle.
+*     * Take all negatives.
+*     * If the negative count is even, done: adding any non-negative can't help.
+*     * If it is odd, fix parity with the cheaper of
+*         (a) dropping the largest negative a[lb-1]   -> s -= a[lb-1]
+*         (b) adding the smallest non-negative a[lb]  -> s += a[lb]
+*       Pick (b) only when a[lb-1] + a[lb] < 0, i.e. when a[lb] < -a[lb-1].
+* Time O(n log n), space O(n).
+*/
 class Solution {
   public:
   long long minCost(vector<int>& a) {
     int n = sz(a);
+
+    // sort only the middle part [1, n-2]; endpoints stay in place
     sort(a.begin() + 1, prev(a.end()));
 
+    // lb = first middle index with value >= 0; middle range is [1, n-1)
     int lb = lower_bound(a.begin() + 1, prev(a.end()), 0) - a.begin();
-    int end = n - 1;
 
+    // sum of all negatives in the middle
     i64 s = accumulate(a.begin() + 1, a.begin() + lb, 0ll);
 
+    // odd number of negatives: fix to even
     if ((lb - 1) & 1) {
-      if (lb < end && (i64)a[lb - 1] + a[lb] < 0) s += a[lb];
-      else s -= a[lb - 1];
+      if (lb < n - 1 && (i64)a[lb - 1] + a[lb] < 0) {
+        s += a[lb]; // pair the last negative with the smallest non-negative
+      } else {
+        s -= a[lb - 1]; // otherwise drop the largest negative
+      }
     }
 
     return (i64)a[0] + a.back() + s;

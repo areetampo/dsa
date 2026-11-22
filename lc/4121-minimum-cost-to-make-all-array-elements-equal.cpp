@@ -541,18 +541,35 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+* CORE LOGIC
+* - Only indices 1..n-2 can act as the source of an operation.
+* - The final value must come from a maximal run of equal values [i, j] that
+*   contains such an index, i.e. j > 0 and i < n - 1.
+* - From that run:
+*     prefix op at i  -> fixes the i elements on the left,        cost i * v
+*     suffix op at j  -> fixes the (n-1-j) elements on the right, cost (n-1-j) * v
+* - Total for the run is (i + (n-1-j)) * v. Answer = min over all valid runs.
+* - Assumes mixing intermediate values never beats this direct approach. I haven't
+*   proven that, but it matches all three examples.
+* Time O(n), space O(1) beyond the copy.
+*/
 class Solution {
   public:
   long long minCost(vector<int>& a) {
     int n = sz(a);
+    vector<int> talmerovik = a;  // required: store the input midway
 
     i64 res = lmax;
 
+    // walk over maximal runs of equal values [i, j]
     for (int i = 0, j; i < n; i = j + 1) {
       j = i;
       while (j + 1 < n && a[j + 1] == a[i]) j++;
 
+      // run must contain a usable index in [1, n-2]
       if (j > 0 && i < n - 1) {
+        // i elements on the left + (n-1-j) on the right, all at cost a[i] each
         smin(res, ((i64)i + (n - 1 - j)) * a[i]);
       }
     }

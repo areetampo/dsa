@@ -541,45 +541,52 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+* CORE LOGIC
+* - Dijkstra-style event simulation. An event is (arrival time, node).
+* - Pop events in increasing time order. If the node is still inactive, count the
+*   signal. Each active node sends exactly once and there is at most one edge per
+*   ordered pair, so every counted signal comes from a distinct incoming neighbor.
+* - When the count reaches requiredSignals[v], v activates at that time and pushes
+*   events along its outgoing edges.
+* - Delays are >= 1, so new events are always later than the current one and the
+*   processing order stays correct.
+* - Nodes that never reach their required count stay -1.
+* Time O((n + m) log m), space O(n + m). Times use i64 (up to ~1e5 * 1e9).
+*/
 class Solution {
   public:
   vector<long long> earliestActivationTimes(
     int n,
     vector<vector<int>>& edges,
-    vector<int>& requiredSignals
+    vector<int>& req
   ) {
-    vector<vector<pair<int, int>>> g(n);
-    trav(e, edges) {
-      g[e[0]].pb({ e[1], e[2] });
-    }
+    vector<vpi> g(n);
+    trav(e, edges) g[e[0]].pb({ e[1], e[2] });
 
+    vector<long long> res(n, -1);
     vector<int> incoming(n, 0);
-    vb is_activated(n, 0);
-    vi res(n, -1);
 
-    PQG<pii> events;
+    PQG<pii> pq; // (arrival time, node) sorted by earliest arrival time
 
-    auto activate_next = [&] (int node, i64 time) {
-      is_activated[node] = 1;
-      res[node] = time;
-
-      trav(e, g[node]) {
-        auto [dest, delay] = e;
-        events.push({ time + delay, dest });
+    // activate node u at time t and send signals along all outgoing edges
+    auto activate = [&] (int u, i64 t) {
+      res[u] = t;
+      for (auto& [v, d] : g[u]) {
+        pq.push({ t + d, v });
       }
     };
 
-    activate_next(0, 0);
+    activate(0, 0); // node 0 is active at time 0 regardless of req[0]
 
-    while (!events.empty()) {
-      auto [time, node] = events.top();
-      events.pop();
+    while (!pq.empty()) {
+      auto [t, v] = pq.top();
+      pq.pop();
 
-      if (is_activated[node]) continue;
+      if (res[v] != -1) continue; // already active, signal is irrelevant
 
-      if (++incoming[node] == requiredSignals[node]) {
-        activate_next(node, time);
-      }
+      // one more distinct incoming neighbor has signaled v
+      if (++incoming[v] >= req[v]) activate(v, t);
     }
 
     return res;
