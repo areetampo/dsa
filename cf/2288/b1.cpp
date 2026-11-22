@@ -512,20 +512,19 @@ void solve() {
   i64 res = ones + twos;
 
   trav(c, s) {
-    vector<vb> next = dp;
+    vector<vb> next(N, vb(N, 0));
 
     fo(o, 0, N) {
       fo(t, 0, N) {
         if (!dp[o][t] || o + t == 0) continue;
-        // + index is safe since o + t <= 100 and dp[o][t] = 1 guarded it
         if (c == '+') {
           // twos exist: get another 2 so twos inc
-          if (t > 0) next[o][t + 1] = 1;
+          if (t > 0 && t + 1 < N) next[o][t + 1] = 1;
           // ones exist: make a 2, reduces the number of ones
-          if (o > 0) next[o - 1][t + 1] = 1;
+          if (o > 0 && t + 1 < N) next[o - 1][t + 1] = 1;
         } else {
           // twos exist: make a 1, reduces the number of twos
-          if (t > 0) next[o + 1][t - 1] = 1;
+          if (t > 0 && o + 1 < N) next[o + 1][t - 1] = 1;
           // ones exist: its gone so reduce ones
           if (o > 0) next[o - 1][t] = 1;
         }
