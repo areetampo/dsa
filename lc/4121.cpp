@@ -541,3 +541,22 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  long long minCost(vector<int>& a) {
+    int n = sz(a);
+
+    i64 res = lmax;
+
+    for (int i = 0, j; i < n; i = j + 1) {
+      j = i;
+      while (j + 1 < n && a[j + 1] == a[i]) j++;
+
+      if (0 < min(i, j) && max(i, j) < n - 1) {
+        smin(res, ((i64)i + (n - 1 - j)) * a[i]);
+      }
+    }
+
+    return res;
+  }
+};

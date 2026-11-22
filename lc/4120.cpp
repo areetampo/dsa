@@ -541,3 +541,18 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  int countDominantElements(vector<int>& a) {
+    int n = sz(a);
+    if (n == 1) return 1;
+
+    int res = (a[0] >= a[1]) + (a[n - 2] <= a[n - 1]);
+    fo(i, 1, n - 1) {
+      res += a[i] >= (((f80)a[i - 1] + a[i + 1]) / 2);
+    }
+
+    return res;
+  }
+};
+
