@@ -541,3 +541,22 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  long long minCost(vector<int>& a) {
+    int n = sz(a);
+    sort(a.begin() + 1, prev(a.end()));
+
+    int lb = lower_bound(a.begin() + 1, prev(a.end()), 0) - a.begin();
+    int end = n - 1;
+
+    i64 s = accumulate(a.begin() + 1, a.begin() + lb, 0ll);
+
+    if ((lb - 1) & 1) {
+      if (lb < end && (i64)a[lb - 1] + a[lb] < 0) s += a[lb];
+      else s -= a[lb - 1];
+    }
+
+    return (i64)a[0] + a.back() + s;
+  }
+};
