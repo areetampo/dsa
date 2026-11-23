@@ -541,3 +541,79 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * CORE IDEA
+ * ---------
+ * 1. Let x_i be the AND of each window of length k. A valid y needs
+ *    (y & x_i) != 0 for every i, so we must pick the fewest bit positions
+ *    such that every x_i contains at least one picked bit (a hitting set).
+ *    If some x_i == 0, no y can work -> -1.
+ *
+ * 2. Values are < 2^17, so there are only 2^17 candidate y's. Brute force
+ *    over y is fine, but checking y against all n windows is too slow.
+ *
+ * 3. Flip the question: y is INVALID iff some x_i has x_i & y == 0, i.e.
+ *    x_i uses only bits y did not pick, i.e. x_i is a SUBSET of ~y.
+ *
+ * 4. So we need, for every mask m, the answer to:
+ *        has[m] = "does some x_i satisfy x_i ⊆ m ?"
+ *    Computing it naively is O(2^17 * n). SOS DP (Sum Over Subsets) fills
+ *    the whole table in O(17 * 2^17):
+ *       - start with has[x_i] = 1 for the actual window ANDs
+ *       - for every mask, OR in the values of its "one bit removed" masks.
+ *         Processing masks in increasing order guarantees those smaller
+ *         masks are already final, so has[m] becomes true iff some x_i is
+ *         a submask of m.
+ *
+ * 5. y is valid iff has[~y] == 0 (no window fits inside the unpicked bits).
+ *    Answer = min popcount(y) over valid y. Each check is O(1).
+ *
+ * Time: O(17*n + 17*2^17)   Space: O(17*n + 2^17)
+ */
+class Solution {
+  public:
+  int minSetBits(vector<int>& a, int k) {
+    int n = sz(a), B = 17; // a[i] <= 1e5 < 2^17
+
+    vvi cnt(n + 1, vi(B, 0)); // cnt[i][b] = count of bit b in first i elements
+    vb has(1 << B, 0); // has[m] = some window AND is a subset of m
+
+    fo(i, 0, n) {
+      // prefix bit counts
+      fo(b, 0, B) {
+        cnt[i + 1][b] = cnt[i][b] + !!(a[i] & (1 << b));
+      }
+
+      // window [i-k+1 .. i] is complete
+      if (i >= k - 1) {
+        int x = 0; // AND of the window
+        fo(b, 0, B) {
+          int d = cnt[i + 1][b] - cnt[i + 1 - k][b];   // fixed index order
+          if (d == k) x |= 1 << b;      // bit survives AND only if all k have it
+        }
+        if (x == 0) return -1; // AND = 0: this window can never be hit
+        has[x] = 1; // base case for SOS
+      }
+    }
+
+    // SOS DP: has[mask] |= has[mask minus one bit]
+    // ascending mask order -> smaller masks are already final
+    fo(mask, 0, 1 << B) {
+      fo(b, 0, B) {
+        if (mask & (1 << b)) {
+          // OR, not overwrite
+          if (has[mask ^ (1 << b)]) has[mask] = 1;
+        }
+      }
+    }
+
+    int res = 20, full = (1 << B) - 1; // popcount <= 17, so 20 = "none found"
+    fo(y, 1, 1 << B) { // y > 0
+      if (!has[full ^ y]) { // ~y restricted to the low 17 bits
+        smin<int>(res, popcount(y));
+      }
+    }
+
+    return res == 20 ? -1 : res;
+  }
+};
