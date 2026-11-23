@@ -504,5 +504,49 @@ void precomp() {
 }
 
 void solve() {
+  /*
+  * IDEA
+  * ----
+  * Only y = (number of power-2 stones) matters; the answer is n + y.
+  * We get ONE query per test, so we need a single spell s whose result k
+  * is different for every y in [0, n].
+  *
+  * Spell: "+--" repeated n times (length 3n <= 300 <= 999).
+  *
+  * Why it works:
+  *  - '+' gains a stone only if a power-2 stone exists (it copies it).
+  *    With no 2 available, it just turns a 1 into a 2 (no gain).
+  *  - '-' is free while a 2 exists (2 -> 1, stone count unchanged);
+  *    once no 2 is left, it destroys a 1 (costs a stone).
+  *  - Each block "+--" gains +1 stone and uses up one unit of the 2-supply,
+  *    so the gains last for exactly y blocks.
+  *  - Max stones = n + y. It is first reached at the y-th '+', whose
+  *    1-indexed position is 3y - 2. That is the prefix LENGTH k.
+  *  - y = 0: nothing ever beats n, so the empty prefix wins -> k = 0.
+  *
+  *   y : 0  1  2  3  ...
+  *   k : 0  1  4  7  ...      (all distinct => k identifies y)
+  *
+  * Decode: y = 0 if k == 0, else y = (k + 2) / 3.
+  * Output: sum of initial powers = (n - y)*1 + y*2 = n + y.
+  */
 
+  int n; cin >> n; // >= 1
+
+  // Build the spell: "+--" repeated n times (length 3n <= 300 <= 999)
+  string s;
+  rep(n) s += "+--";
+
+  cout << s << endl;
+
+  int k; cin >> k;
+  if (k == -1) return; // invalid query
+
+  // Decode y (the number of power-2 stones) from k:
+  //   k == 0      -> y = 0
+  //   k = 3y - 2  -> y = (k + 2) / 3
+  int y = (k == 0) ? 0 : (k + 2) / 3;
+
+  // Sum of initial powers = x*1 + y*2 = (n - y) + 2y = n + y
+  cout << n + y << endl;
 }
