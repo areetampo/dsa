@@ -544,29 +544,24 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   int maxSubarraySumCircular(vector<int>& a) {
-    // [[sum] [min sum] [sum]]
-    // [[-ve sum] [max sum] [-ve sum]]
-    int curMax = 0;
-    int curMin = 0;
-    int maxSum = a[0];
-    int minSum = a[0];
-    int totalSum = 0;
+    int cur_max = 0;
+    int cur_min = 0;
+    int best_max = a[0];
+    int best_min = a[0];
 
     trav(i, a) {
-      curMax = max(curMax, 0) + i;
-      maxSum = max(maxSum, curMax);
+      cur_max = max(cur_max, 0) + i;
+      smax(best_max, cur_max);
 
-      // kadane but with min to find min subarr
-      curMin = min(curMin, 0) + i;
-      minSum = min(minSum, curMin);
-
-      totalSum += i;
+      cur_min = min(cur_min, 0) + i;
+      smin(best_min, cur_min);
     }
 
-    if (totalSum == minSum) {
-      return maxSum;
+    int total = accumulate(all(a), 0);
+    if (total == best_min) { // all -ve
+      return best_max; // max -ve el
     }
 
-    return max(maxSum, totalSum - minSum);
+    return max(best_max, total - best_min);
   }
 };
