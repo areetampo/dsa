@@ -560,7 +560,7 @@ class Solution {
       curMin = min(curMin, 0) + i;
       minSum = min(minSum, curMin);
 
-      totalSum += num;
+      totalSum += i;
     }
 
     if (totalSum == minSum) {
