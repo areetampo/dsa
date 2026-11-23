@@ -588,8 +588,8 @@ class Solution {
       if (i >= k - 1) {
         int x = 0; // AND of the window
         fo(b, 0, B) {
-          int d = cnt[i + 1][b] - cnt[i + 1 - k][b];   // fixed index order
-          if (d == k) x |= 1 << b;      // bit survives AND only if all k have it
+          int d = cnt[i + 1][b] - cnt[i + 1 - k][b]; // fixed index order
+          if (d == k) x |= 1 << b; // bit survives AND only if all k have it
         }
         if (x == 0) return -1; // AND = 0: this window can never be hit
         has[x] = 1; // base case for SOS
