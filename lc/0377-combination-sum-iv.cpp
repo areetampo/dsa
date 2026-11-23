@@ -549,20 +549,16 @@ class Solution {
     // n <= 200
     // a[i] <= 1e3
 
-    vvi dp(target + 1, vi(n + 1, 0));
-    fill(all(dp[0]), 1);
-    fo(t, 1, target + 1) dp[t][0] = -1;
+    vi dp(target + 1, 0);
+    dp[0] = 1;
 
     fo(t, 1, target + 1) {
-      fo(i, 1, n + 1) {
-        if (t < a[i - 1]) continue;
-        if (dp[t - a[i - 1]][i - 1] != -1)
-          dp[t][i] = dp[t - a[i - 1]][i - 1];
-        if (dp[t - a[i - 1]][i] != -1)
-          dp[t][i] = (dp[t][i] == -1 ? 0 : dp[t][i]) + dp[t - a[i - 1]][i];
+      fo(i, 0, n) {
+        if (t < a[i]) continue;
+        dp[t] = min(INF, dp[t] + dp[t - a[i]]); // some states can overflow
       }
     }
 
-    return dp[target][n];
+    return dp[target]; // 32-bit
   }
 };
