@@ -541,68 +541,76 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * CORE LOGIC
+ * ----------
+ * A mountain = strictly increasing up to a peak, then strictly decreasing.
+ * Both halves share the peak element, so we solve each half independently
+ * with a DP and join them at the peak.
+ *
+ * Let v be the final value an element is changed to (cost |a[i] - v|).
+ *
+ *   inc[i][v] = min cost to make a[0..i] strictly increasing, a[i] -> v
+ *             = |a[i]-v| + min_{u<v} inc[i-1][u]
+ *
+ *   dec[i][v] = min cost to make a[i..n-1] strictly decreasing, a[i] -> v
+ *             = |a[i]-v| + min_{u<v} dec[i+1][u]
+ *
+ * The "min over u < v" is done in O(1) with a running prefix minimum while
+ * v sweeps upward (the set {u < v} only gains u = v-1 each step).
+ *
+ * Peak at index p (1..n-2) with value v costs
+ *   inc[p][v] + dec[p][v] - |a[p]-v|
+ * (the peak's own cost is counted in both tables, so subtract it once).
+ *
+ * If n < 3 no interior peak exists -> -1.
+ * Values stay in [1, V] so positivity is automatic. V = 2000 is a safe cap.
+ *
+ * Time: O(n * V), Space: O(n * V).
+ */
 class Solution {
   public:
   int minOperations(vector<int>& a) {
-    int n = sz(a), MAXV = 2000;
+    int n = sz(a);
+    if (n < 3) return -1;
 
-    if (n <= 2) return -1;
+    int V = 2000; // target values range over 1..V
+    int W = V + 1;
 
-    vi up(MAXV + 2, INF), down(MAXV + 2, INF);
+    // ---------- prefix DP: strictly increasing ----------
+    vvi inc(n, vi(W, INF));
+    fo(v, 1, W) inc[0][v] = abs(v - a[0]); // base: nothing before it
 
-    auto cost = [&] (int x, int y) -> i64 {
-      return abs(x - y);
-    };
-
-    auto relax = [&] (i64& x, i64 y) {
-      if (y < x) x = y;
-    };
-
-    fo(x, 1, MAXV + 1) {
-      up[x] = cost(a[0], x);
+    fo(i, 1, n) {
+      i64 mn = INF; // min of inc[i-1][u] for u < v
+      fo(v, 1, W) {
+        if (v > 1) smin(mn, inc[i - 1][v - 1]); // add u = v-1 to the set
+        if (mn != INF) inc[i][v] = abs(v - a[i]) + mn;
+      }
     }
 
-    fo(pos, 1, n) {
-      vi next_up(MAXV + 2, INF);
-      vi next_down(MAXV + 2, INF);
+    // ---------- suffix DP: strictly decreasing (read right to left) ----------
+    vvi dec(n, vi(W, INF));
+    fo(v, 1, W) dec[n - 1][v] = abs(v - a[n - 1]); // base: last element
 
-      i64 best_left = INF;
-
-      fo(cur, 1, MAXV + 1) {
-        if (best_left != INF) {
-          i64 add = cost(a[pos], cur);
-          next_up[cur] = best_left + add;
-        }
-
-        relax(best_left, up[cur]);
+    fr(i, n - 2, 0) {
+      i64 mn = INF; // min of dec[i+1][u] for u < v
+      fo(v, 1, W) {
+        if (v > 1) smin(mn, dec[i + 1][v - 1]);
+        if (mn != INF) dec[i][v] = abs(v - a[i]) + mn;
       }
-
-      i64 best_right = INF;
-
-      fr(cur, MAXV, 1) {
-        i64 candidate = min(up[cur], down[cur]);
-
-        if (pos >= 2 && best_right != INF) {
-          next_down[cur] = best_right + cost(a[pos], cur);
-        }
-
-        relax(best_right, candidate);
-      }
-
-      up.swap(next_up);
-      down.swap(next_down);
     }
 
+    // ---------- join at an interior peak ----------
     i64 res = INF;
-
-    auto take_min = [&] (const vi& dp) {
-      fo(x, 1, MAXV + 1) {
-        relax(res, dp[x]);
+    fo(p, 1, n - 1) { // possible peaks = 1 .. n-2
+      fo(v, 1, W) {
+        if (inc[p][v] == INF || dec[p][v] == INF) continue;
+        // peak cost is in both tables, subtract once
+        smin(res, inc[p][v] + dec[p][v] - abs(v - a[p]));
       }
-    };
+    }
 
-    take_min(down);
-
-    return res == INF ? -1 : res;
+    return res == INF ? -1 : (int)res;
   }
 };
