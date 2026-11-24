@@ -559,17 +559,33 @@ class MedianFinder {
   MedianFinder() {}
 
   void addNum(int num) {
+    // if (!hi.empty() && num > hi.top()) {
+    //   hi.push(num);
+    //   while (sz(lo) - sz(hi) < 0) {
+    //     lo.push(hi.top());
+    //     hi.pop();
+    //   }
+    // } else {
+    //   lo.push(num);
+    //   while (sz(lo) - sz(hi) > 1) {
+    //     hi.push(lo.top());
+    //     lo.pop();
+    //   }
+    // }
+
     lo.push(num);
-    if (sz(lo) > sz(hi) + 1) {
-      hi.push(lo.top());
-      lo.pop();
+    hi.push(lo.top());
+    lo.pop();
+    while (sz(hi) > sz(lo)) {
+      lo.push(hi.top());
+      hi.pop();
     }
   }
 
   double findMedian() {
     // el always exits when func called
     if (sz(lo) == sz(hi))
-      return (f64)lo.top() + ((f64)hi.top() - lo.top()) / 2;
+      return (lo.top() + hi.top()) / 2.0;
     return lo.top();
   }
 };
