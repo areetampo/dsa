@@ -553,18 +553,22 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   string longestPalindrome(string s) {
-    string ans = "";
-    int n = s.length();
-    for (int i = 0; i < n; ++i) {
-      int j = i;
-      while (s[i] == s[j]) ++j;
-      int left = i - 1, right = j;
-      while (0 <= left && right < n && s[left] == s[right]) {
-        --left; ++right;
+    int n = sz(s);
+
+    pii res = { 0,1 }; // (start idx, len)
+
+    function<void(int, int)> expand = [&] (int i, int j) -> void {
+      while (0 <= i && j < n && s[i] == s[j]) {
+        if (j - i + 1 > res.ss) res = { i, j - i + 1 };
+        i--, j++;
       }
-      int len = right - left - 1;
-      if (len > ans.length()) ans = s.substr(left + 1, len);
+    };
+
+    fo(i, 0, n) {
+      expand(i, i); // odd len
+      if (i + 1 < n) expand(i, i + 1); // even len
     }
-    return ans;
+
+    return s.substr(res.ff, res.ss);
   }
 };

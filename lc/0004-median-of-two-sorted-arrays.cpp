@@ -554,5 +554,26 @@ class Solution {
   public:
   double findMedianSortedArrays(vector<int>& a, vector<int>& b) {
     int n = sz(a), m = sz(b);
+    if (n > m) swap(n, m), swap(a, b); // a smaller
+    int half = (n + m + 1) / 2;
+
+    int lo = 0, hi = n;
+    while (lo <= hi) {
+      int i = lo + (hi - lo) / 2; // elements taken from a into left half
+      int j = half - i;           // elements taken from b into left half
+
+      i64 aL = (i > 0) ? a[i - 1] : lmin;
+      i64 aR = (i < n) ? a[i] : lmax;
+      i64 bL = (j > 0) ? b[j - 1] : lmin;
+      i64 bR = (j < m) ? b[j] : lmax;
+
+      if (aL <= bR && bL <= aR) {     // valid partition
+        if ((n + m) % 2) return max(aL, bL);
+        return (max(aL, bL) + min(aR, bR)) / 2.0;
+      } else if (aL > bR) hi = i - 1; // took too many from A
+      else lo = i + 1;                // took too few from A
+    }
+
+    return 0.0;
   }
 };
