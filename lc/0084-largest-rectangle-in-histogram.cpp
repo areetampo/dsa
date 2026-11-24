@@ -534,7 +534,6 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
-
 /*
  * LARGEST RECTANGLE IN HISTOGRAM: one-pass monotonic stack
  *
