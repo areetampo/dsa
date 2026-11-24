@@ -553,6 +553,56 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   bool isInterleave(string s1, string s2, string s3) {
-    int n = sz(s1), m = sz(s2), 
+    int n = sz(s1), m = sz(s2), x = sz(s3);
+    if (n + m != x) return 0;
+
+    // 3D
+    // vector<vector<vb>> dp(n + 1, vector<vb>(m + 1, vb(x + 1, 0)));
+    // dp[0][0][0] = 1;
+    // fo(i, 0, n + 1) {
+    //   fo(j, 0, m + 1) {
+    //     fo(k, 0, x + 1) {
+    //       if (!i && !j && !k) continue;
+    //       dp[i][j][k] =
+    //         i && k && s1[i - 1] == s3[k - 1] && dp[i - 1][j][k - 1] ||
+    //         j && k && s2[j - 1] == s3[k - 1] && dp[i][j - 1][k - 1];
+    //     }
+    //   }
+    // }
+    // return dp[n][m][x];
+
+    //2D
+    // vector<vb> dp(n + 1, vb(m + 1, 0));
+    // dp[0][0] = 1;
+    // fo(i, 0, n + 1) {
+    //   fo(j, 0, m + 1) {
+    //     if (!i && !j) continue;
+    //     fo(k, 0, x + 1) {
+    //       if (i + j != k) continue;
+    //       dp[i][j] =
+    //         i && k && s1[i - 1] == s3[k - 1] && dp[i - 1][j] ||
+    //         j && k && s2[j - 1] == s3[k - 1] && dp[i][j - 1];
+    //     }
+    //   }
+    // }
+    // return dp[n][m];
+
+    //1D
+    vb dp(m + 1, 0);
+    dp[0] = 1;
+
+    fo(i, 0, n + 1) {
+      fo(j, 0, m + 1) {
+        if (!i && !j) continue;
+        fo(k, 0, x + 1) {
+          if (i + j != k) continue;
+          dp[j] =
+            i && k && s1[i - 1] == s3[k - 1] && dp[j] ||
+            j && k && s2[j - 1] == s3[k - 1] && dp[j - 1];
+        }
+      }
+    }
+
+    return dp[m];
   }
 };
