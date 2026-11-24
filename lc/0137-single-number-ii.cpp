@@ -552,9 +552,17 @@ static const int _fast_io = [] () {
 
 class Solution {
   public:
-  int singleNumber(vector<int>& v) {
+  int singleNumber(vector<int>& a) {
     // https://leetcode.com/problems/single-number-ii/solutions/43295/detailed-explanation-and-generalization-i9d5p
 
+    int res = 0;
 
+    fo(b, 0, 32) {
+      int cnt = 0;
+      trav(i, a) cnt += (i >> b) & 1;
+      if (cnt % 3) res |= 1 << b;
+    }
+
+    return res;
   }
 };
