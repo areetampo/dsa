@@ -84,7 +84,10 @@ constexpr i32 imax = numeric_limits<i32>::max();
 constexpr i32 imin = numeric_limits<i32>::min();
 constexpr i64 lmax = numeric_limits<i64>::max();
 constexpr i64 lmin = numeric_limits<i64>::min();
+constexpr f64 dmax = numeric_limits<f64>::max();
+constexpr f64 dmin = numeric_limits<f64>::lowest();
 constexpr i64 INF = 2'000'000'000'000'000'000LL;
+constexpr f64 DINF = numeric_limits<f64>::infinity();
 constexpr i64 MOD1 = 1'000'000'007;
 constexpr i64 MOD2 = 998'244'353;
 constexpr i64 MOD = MOD1;
@@ -545,20 +548,35 @@ class Solution {
   public:
   int maxPoints(vector<vector<int>>& points) {
     int n = sz(points);
+    if (n <= 2) return n;
 
     int res = 2;
 
     fo(i, 0, n) {
-      int x1 = points[i][0], y1 = points[i][1];
-      UMap<double, int> slope_cnt;
+      i64 x1 = points[i][0], y1 = points[i][1];
+      UMap<pii, int> slope_cnt;
+      int r = 0;
 
       fo(j, i + 1, n) {
-        int x2 = points[j][0], y2 = points[j][1];
+        i64 dx = (i64)points[j][0] - x1;
+        i64 dy = (i64)points[j][1] - y1;
 
-        if (y1 == y2) {
-          slope_cnt[imax]++;
+        if (dx == 0 && dy == 0) continue; // duplicate points
+
+        i64 g = gcd(abs(dx), abs(dy)); // gcd(0,x) = x so inf slope = 1/0
+        dx /= g;
+        dy /= g;
+
+        // canonicalize sign so opposite directions share the same key
+        if (dx < 0 || (dx == 0 && dy < 0)) {
+          dx = -dx;
+          dy = -dy;
         }
+
+        smax(r, ++slope_cnt[{dx, dy}]);
       }
+
+      smax(res, r + 1);
     }
 
     return res;

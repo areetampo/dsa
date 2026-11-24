@@ -39,6 +39,12 @@ struct chash {
     static const u64 R = chrono::steady_clock::now().time_since_epoch().count();
     return sm(x + R);
   }
+  template <class T, enable_if_t<is_floating_point_v<T>, int> = 0> size_t operator()(T x) const {
+    if (x == 0) x = 0;
+    double d = (double)x;
+    u64 b; memcpy(&b, &d, sizeof b);
+    return (*this)(b);
+  }
   template <class A, class B> size_t operator()(const pair<A, B>& p) const {
     return sm((*this)(p.first) * 31 + (*this)(p.second));
   }
@@ -84,7 +90,10 @@ constexpr i32 imax = numeric_limits<i32>::max();
 constexpr i32 imin = numeric_limits<i32>::min();
 constexpr i64 lmax = numeric_limits<i64>::max();
 constexpr i64 lmin = numeric_limits<i64>::min();
+constexpr f64 dmax = numeric_limits<f64>::max();
+constexpr f64 dmin = numeric_limits<f64>::lowest();
 constexpr i64 INF = 2'000'000'000'000'000'000LL;
+constexpr f64 DINF = numeric_limits<f64>::infinity();
 constexpr i64 MOD1 = 1'000'000'007;
 constexpr i64 MOD2 = 998'244'353;
 constexpr i64 MOD = MOD1;
