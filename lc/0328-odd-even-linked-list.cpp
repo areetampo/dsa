@@ -587,6 +587,25 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   ListNode* oddEvenList(ListNode* head) {
+    if (!head || !head->next || !head->next->next) return head;
 
+    ListNode* a = new ListNode(-1), * b = new ListNode(-1);
+    ListNode* ca = a, * cb = b, * cur = head;
+
+    while (cur) {
+      ca->next = cur;
+      ca = ca->next;
+      cur = cur->next;
+
+      if (cur) {
+        cb->next = cur;
+        cb = cb->next;
+        cur = cur->next;
+      }
+    }
+
+    ca->next = b->next;
+    cb->next = nullptr;
+    return a->next;
   }
 };
