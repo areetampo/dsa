@@ -474,6 +474,28 @@ template <u32 M> struct ModInt {
 };
 using Mint1 = ModInt<1'000'000'007>;
 using Mint2 = ModInt<998'244'353>;
+// 64 bit version of ModInt, for mods that don't fit in 31 bits (up to ~9e18), slower.
+// same usage as Mint1: M18 a = 5; a = a * 3 / 2; cout << a;   / and inv() need a prime mod
+template <u64 M> struct ModInt64 {
+  u64 v;
+  constexpr ModInt64(i64 x = 0) : v((u64)((x %= (i64)M) < 0 ? x + (i64)M : x)) {}
+  ModInt64& operator+=(const ModInt64& o) { v += o.v; if (v >= M) v -= M; return *this; }
+  ModInt64& operator-=(const ModInt64& o) { v += M - o.v; if (v >= M) v -= M; return *this; }
+  ModInt64& operator*=(const ModInt64& o) { v = (u128)v * o.v % M; return *this; }
+  ModInt64 pow(u64 e) const { ModInt64 r = 1, b = *this; for (; e; e >>= 1, b *= b) if (e & 1) r *= b; return r; }
+  ModInt64 inv() const { return pow(M - 2); }
+  ModInt64& operator/=(const ModInt64& o) { return *this *= o.inv(); }
+  friend ModInt64 operator+(ModInt64 a, const ModInt64& b) { return a += b; }
+  friend ModInt64 operator-(ModInt64 a, const ModInt64& b) { return a -= b; }
+  friend ModInt64 operator*(ModInt64 a, const ModInt64& b) { return a *= b; }
+  friend ModInt64 operator/(ModInt64 a, const ModInt64& b) { return a /= b; }
+  ModInt64 operator-() const { return ModInt64() - *this; }
+  friend bool operator==(const ModInt64& a, const ModInt64& b) { return a.v == b.v; }
+  friend bool operator!=(const ModInt64& a, const ModInt64& b) { return a.v != b.v; }
+  friend istream& operator>>(istream& is, ModInt64& a) { i64 x; is >> x; a = ModInt64(x); return is; }
+  friend ostream& operator<<(ostream& os, const ModInt64& a) { return os << a.v; }
+};
+using M18 = ModInt64<1'000'000'000'000'000'009ULL>;
 
 /********************************************************/
 /* Entry                                                */

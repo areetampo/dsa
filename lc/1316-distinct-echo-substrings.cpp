@@ -507,6 +507,8 @@ inline i64 isqrt(i64 n) {
   return x;
 }
 
+// number type that reduces itself: Mint1 a = 5; a = a * 3 / 2; cout << a;   a.v is the raw value
+// / and inv() need a prime mod. Mint1 and Mint2 can't be mixed in one expression
 template <u32 M> struct ModInt {
   u32 v;
   constexpr ModInt(i64 x = 0) : v((u32)((x %= (i64)M) < 0 ? x + M : x)) {}
@@ -528,6 +530,28 @@ template <u32 M> struct ModInt {
 };
 using Mint1 = ModInt<1'000'000'007>;
 using Mint2 = ModInt<998'244'353>;
+// 64 bit version of ModInt, for mods that don't fit in 31 bits (up to ~9e18), slower.
+// same usage as Mint1: M18 a = 5; a = a * 3 / 2; cout << a;   / and inv() need a prime mod
+template <u64 M> struct ModInt64 {
+  u64 v;
+  constexpr ModInt64(i64 x = 0) : v((u64)((x %= (i64)M) < 0 ? x + (i64)M : x)) {}
+  ModInt64& operator+=(const ModInt64& o) { v += o.v; if (v >= M) v -= M; return *this; }
+  ModInt64& operator-=(const ModInt64& o) { v += M - o.v; if (v >= M) v -= M; return *this; }
+  ModInt64& operator*=(const ModInt64& o) { v = (u128)v * o.v % M; return *this; }
+  ModInt64 pow(u64 e) const { ModInt64 r = 1, b = *this; for (; e; e >>= 1, b *= b) if (e & 1) r *= b; return r; }
+  ModInt64 inv() const { return pow(M - 2); }
+  ModInt64& operator/=(const ModInt64& o) { return *this *= o.inv(); }
+  friend ModInt64 operator+(ModInt64 a, const ModInt64& b) { return a += b; }
+  friend ModInt64 operator-(ModInt64 a, const ModInt64& b) { return a -= b; }
+  friend ModInt64 operator*(ModInt64 a, const ModInt64& b) { return a *= b; }
+  friend ModInt64 operator/(ModInt64 a, const ModInt64& b) { return a /= b; }
+  ModInt64 operator-() const { return ModInt64() - *this; }
+  friend bool operator==(const ModInt64& a, const ModInt64& b) { return a.v == b.v; }
+  friend bool operator!=(const ModInt64& a, const ModInt64& b) { return a.v != b.v; }
+  friend istream& operator>>(istream& is, ModInt64& a) { i64 x; is >> x; a = ModInt64(x); return is; }
+  friend ostream& operator<<(ostream& os, const ModInt64& a) { return os << a.v; }
+};
+using M18 = ModInt64<1'000'000'000'000'000'009ULL>;
 
 /********************************************************/
 
@@ -550,37 +574,81 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * LeetCode 1316: Distinct Echo Substrings
+ *
+ * GOAL
+ * Count distinct substrings of the form a + a (first half == second half).
+ *
+ * IDEA
+ * Every candidate echo is fixed by (start i, half-length L): it covers
+ * text[i .. i+2L), and we need text[i .. i+L) == text[i+L .. i+2L).
+ * There are O(n^2) candidates. Comparing characters would make each check O(L),
+ * giving O(n^3). A rolling hash makes each comparison O(1), giving O(n^2).
+ *
+ * ROLLING HASH
+ * Treat a string as a number in base p, modulo a big prime:
+ *     H("c1 c2 ... ck") = c1*p^(k-1) + c2*p^(k-2) + ... + ck   (mod M)
+ * Precompute prefix hashes: hash[i+1] = hash[i]*p + text[i].
+ * The hash of any substring text[s..e) is then
+ *     hash[e] - hash[s] * p^(e-s)
+ * because hash[s] sits (e-s) positions too far left inside hash[e], so we
+ * shift it by p^(e-s) before subtracting. This is the same trick as
+ * prefix sums, plus the shift.
+ *
+ * DEDUPLICATION
+ * The same echo can appear at many positions (e.g. "aa" in "aaaa").
+ * We insert the hash of the half "a" into a set; the answer is the set size.
+ * Equal halves give equal hashes, so each distinct echo is counted once.
+ *
+ * SAFETY DETAILS
+ * - mod = 2^61 - 1 makes collisions extremely unlikely.
+ * - Products of two ~61-bit numbers overflow i64, so mulmod (128-bit) is used.
+ * - Characters map to 1..26 (never 0), so "a" and "aa" don't hash alike.
+ * - Subtraction can go negative, so we normalize with ((x % M) + M) % M.
+ * - The base is random so nobody can craft an anti-hash test.
+ *
+ * COMPLEXITY
+ * Time:  O(n^2)  (O(1) work per (i, L) pair)
+ * Space: O(n) for hash/pw, plus up to O(n^2) in the set in the worst case
+ */
 class Solution {
   public:
   int distinctEchoSubstrings(string text) {
     int n = sz(text);
-    i64 mod = (1ll << 61) - 1;
-    int p = 31;
-    vi hash = { 0 }, pw = { 1 };
+    const i64 mod = (1ll << 61) - 1;     // large Mersenne prime modulus
+    const i64 p = rnd(1000, 1'000'000);  // random base, larger than the alphabet
 
-    rep(n) {
-      pw.pb(pw.back() * p % mod);
+    // hash[i] = hash of the first i characters (hash[0] = empty string = 0)
+    // pw[i]   = p^i mod M, used to shift prefix hashes into alignment
+    vi hash(n + 1, 0), pw(n + 1, 1);
+
+    // Build both arrays in one pass
+    fo(i, 0, n) {
+      pw[i + 1] = mulmod(pw[i], p, mod);  // p^(i+1) = p^i * p
+      // shift the previous hash left by one "digit" and append the new char (1..26)
+      hash[i + 1] = (mulmod(hash[i], p, mod) + (text[i] - 'a' + 1)) % mod;
     }
 
-    trav(c, text) {
-      int x = c - 'a' + 1;
-      hash.pb(((hash.back() * p % mod) + x) % mod);
-    }
-
-    function<i64(int, int)> get_hash = [&] (int s, int e) -> i64 {
-      return ((hash[e] - (hash[s] * pw[e - s] % mod)) + mod) % mod;
+    // Hash of text[s..e) in O(1).
+    auto get_hash = [&] (int s, int e) -> i64 {
+      i64 sub = mulmod(hash[s], pw[e - s], mod);  // prefix part, shifted into place
+      return ((hash[e] - sub) % mod + mod) % mod; // remove it, fix negative values
     };
 
-    int res = 0;
+    // Set of hashes of distinct halves "a" such that a + a occurs in text
+    USet<i64> seen;
 
-    fo(i, 0, n) {
-      for (int L = 1; i + 2 * L <= n; L++) {
-        if (get_hash(i, i + L) == get_hash(i + L, i + 2 * L)) {
-          res++;
+    fo(i, 0, n) {                               // start of the candidate echo
+      for (int L = 1; i + 2 * L <= n; L++) {    // half-length; must fit in the string
+        i64 h1 = get_hash(i, i + L);            // hash of first half
+        i64 h2 = get_hash(i + L, i + 2 * L);    // hash of second half
+        if (h1 == h2) {                         // halves equal => text[i..i+2L) is an echo
+          seen.insert(h1);                      // set dedupes repeated echoes
         }
       }
     }
 
-    return res;
+    return sz(seen);  // number of distinct echo substrings
   }
 };
