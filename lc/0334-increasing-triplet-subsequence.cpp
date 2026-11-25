@@ -577,11 +577,16 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   bool increasingTriplet(vector<int>& a) {
-    int x = imax, y = imax;
+    int x = imax, y = imax; // treat as min, second min but not literally
 
     trav(i, a) {
       if (x == imax) x = i;
-      else if ()
+      else if (y == imax) {
+        if (i < x) x = i;
+        else if (i > x) y = i;
+      } else if (i < x) x = i;
+      else if (x < i && i < y) y = i;
+      else if (i > y) return 1;
     }
 
     return 0;
