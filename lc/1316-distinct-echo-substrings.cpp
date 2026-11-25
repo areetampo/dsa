@@ -553,6 +553,34 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   int distinctEchoSubstrings(string text) {
+    int n = sz(text);
+    i64 mod = (1ll << 61) - 1;
+    int p = 31;
+    vi hash = { 0 }, pw = { 1 };
 
+    rep(n) {
+      pw.pb(pw.back() * p % mod);
+    }
+
+    trav(c, text) {
+      int x = c - 'a' + 1;
+      hash.pb(((hash.back() * p % mod) + x) % mod);
+    }
+
+    function<i64(int, int)> get_hash = [&] (int s, int e) -> i64 {
+      return ((hash[e] - (hash[s] * pw[e - s] % mod)) + mod) % mod;
+    };
+
+    int res = 0;
+
+    fo(i, 0, n) {
+      for (int L = 1; i + 2 * L <= n; L++) {
+        if (get_hash(i, i + L) == get_hash(i + L, i + 2 * L)) {
+          res++;
+        }
+      }
+    }
+
+    return res;
   }
 };
