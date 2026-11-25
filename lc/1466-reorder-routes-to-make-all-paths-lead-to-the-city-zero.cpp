@@ -576,29 +576,29 @@ static const int _fast_io = [] () {
 
 class Solution {
   public:
-  int findCircleNum(vector<vector<int>>& g) {
-    int n = sz(g);
+  int minReorder(int n, vector<vector<int>>& edges) {
+    vvi undir(n);
+    vector<USet<int>> dir(n);
+    trav(i, edges) {
+      undir[i[0]].pb(i[1]);
+      undir[i[1]].pb(i[0]);
+      dir[i[0]].insert(i[1]);
+    }
+
+    stack<int> st;
+    st.push(0);
     vb vis(n, 0);
+    vis[0] = 1;
 
     int res = 0;
-    fo(i, 0, n) {
-      if (vis[i]) continue;
-
-      stack<int> st;
-      st.push(i);
-      vis[i] = 1;
-
-      while (!st.empty()) {
-        int cur = st.top(); st.pop();
-        fo(j, 0, n) {
-          if (g[cur][j] && !vis[j]) {
-            vis[j] = 1;
-            st.push(j);
-          }
-        }
+    while (!st.empty()) {
+      int node = st.top(); st.pop();
+      trav(nb, undir[node]) {
+        if (vis[node]) continue;
+        if (dir[node].contains(nb)) res++;
+        vis[nb] = 1;
+        st.push(nb);
       }
-
-      res++;
     }
 
     return res;

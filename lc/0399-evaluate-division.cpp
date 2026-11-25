@@ -565,16 +565,16 @@ class Solution {
     function<double(int, int)> path_product = [&] (int u, int v) -> double {
       vector<pair<int, double>> st = { { u, 1 } };
       vb vis(n, 0);
+      vis[u] = 1;
 
       while (!st.empty()) {
         // dbg(st);
         auto [cur, r] = st.back(); st.pop_back();
         if (cur == v) return r;
 
-        vis[cur] = 1;
-
         trav(nb, g[cur]) {
           if (vis[nb.ff]) continue;
+          vis[nb.ff] = 1;
           st.pb({ nb.ff, r * nb.ss });
         }
       }
