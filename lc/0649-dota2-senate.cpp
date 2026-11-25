@@ -577,26 +577,28 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   string predictPartyVictory(string s) {
-    int r = 0, d = 0, ban_r = 0, ban_d = 0;
+    int n = sz(s);
 
-    trav(i, s) {
-      if (i == 'R') {
-        if (ban_r) {
-          ban_r--;
-          continue;
-        }
-        r++;
-        ban_d++;
+    queue<int> rad, dir;
+    fo(i, 0, sz(s)) {
+      if (s[i] == 'R') {
+        rad.push(i);
       } else {
-        if (ban_d) {
-          ban_d--;
-          continue;
-        }
-        d++;
-        ban_r++;
+        dir.push(i);
       }
     }
 
-    return r > d ? "Radiant" : "Dire";
+    // Use increasing n to keep track of position
+    while (!rad.empty() && !dir.empty()) {
+      // Only "winner" stays in their queue
+      if (rad.front() < dir.front()) {
+        rad.push(n++);
+      } else {
+        dir.push(n++);
+      }
+      rad.pop(), dir.pop();
+    }
+
+    return rad.empty() ? "Dire": "Radiant";
   }
 };
