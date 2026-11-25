@@ -588,12 +588,30 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   int pathSum(TreeNode* root, int t) {
-    vector<pair<TreeNode*, int>> st = { { root, root->val } };
+    vector<pair<TreeNode*, int>> st;
     UMap<int, int> mp = { { 0, 1 } };
+
+    auto c = root;
+    while (c) {
+      st.pb({ c, c->val + (st.empty() ? 0 : st.back().ss) });
+      mp[st.back().ss]++;
+      c = c->left;
+    }
+
+    int res = 0;
 
     while (!st.empty()) {
       auto [node, sum] = st.back(); st.pop_back();
-      
+      mp[sum]--;
+      if (mp.contains(t - sum)) res += mp[t - sum];
+      node = node->right;
+      while (node) {
+        st.pb({ node, node->val + (st.empty() ? 0 : st.back().ss) });
+        mp[st.back().ss]++;
+        node = node->left;
+      }
     }
+
+    return res;
   }
 };
