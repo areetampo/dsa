@@ -588,34 +588,24 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   int maxLevelSum(TreeNode* root) {
-    // stack size does not give the level, its just the nodes waiting to be processed
-    stack<tuple<TreeNode*, i64, int>> st; // node, sum, level
-    st.push({ root, root->val, 1 });
+    queue<TreeNode*> q;
+    q.push(root);
 
-    vector<i64> mp(1e5, imin); // maximum sum at each level, 1e4 nodes, -1e5 min, -1e9 > imin
-    int max_level = 0;
+    int max_sum = imin, lvl = imax, cur_level = 1;
 
-    while (!st.empty()) {
-      auto [node, sum, level] = st.top();
-      st.pop();
+    while (!q.empty()) {
+      int szz = sz(q), sum = 0;
 
-      smax(mp[level], sum);
-      smax(max_level, level);
+      while (szz--) {
+        auto node = q.front(); q.pop();
+        sum += node->val;
+        if (node->left) q.push(node->left);
+        if (node->right) q.push(node->right);
+      }
 
-      if (node->left)
-        st.push({ node->left, sum + node->left->val, level + 1 });
+      if (sum > max_sum) max_sum = sum, lvl = cur_level;
 
-      if (node->right)
-        st.push({ node->right, sum + node->right->val, level + 1 });
-    }
-
-    int max_sum = imin, lvl = imax;
-
-    fo(l, 1, max_level) {
-      if (mp[l] > max_sum)
-        max_sum = mp[l], lvl = l;
-      else if (mp[l] == max_sum)
-        smin<int>(lvl, l);
+      cur_level++;
     }
 
     return lvl;
