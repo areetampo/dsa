@@ -586,15 +586,16 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   vector<int> successfulPairs(vector<int>& spells, vector<int>& potions, long long success) {
-    int n = sz(spells);
-
     sort(all(potions));
 
     vector<int> res;
 
     trav(i, spells) {
       // i * potion >= success
-      i64 x = ceil_div(success, )
+      i64 x = ceil_div(success, i);
+      dbg(i, x);
+      int idx = lower_bound(all(potions), x) - potions.begin();
+      res.pb(sz(potions) - idx);
     }
 
     return res;
