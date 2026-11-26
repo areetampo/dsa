@@ -586,12 +586,7 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   vector<string> letterCombinations(string digits) {
-    vs map = { "", "" };
-    fo(i, 0, 26, 3) {
-      map.pb("");
-      fo(j, 0, 3) map.back() += 'a' + j;
-    }
-    map.pb("yz");
+    vs map = { "", "","abc","def","ghi","jkl","mno","pqrs","tuv","wxyz" };
 
     vs res;
     string cur;
@@ -602,7 +597,7 @@ class Solution {
         return;
       }
 
-      trav(c, map[i]) {
+      trav(c, map[digits[i] - '0']) {
         cur += c;
         dfs(i + 1);
         cur.pop_back();
