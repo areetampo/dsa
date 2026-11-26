@@ -475,6 +475,7 @@ template <u32 M> struct ModInt {
   friend bool operator>=(const ModInt& a, const ModInt& b) { return a.v >= b.v; }
   friend istream& operator>>(istream& is, ModInt& a) { i64 x; is >> x; a = ModInt(x); return is; }
   friend ostream& operator<<(ostream& os, const ModInt& a) { return os << a.v; }
+  template <class T, enable_if_t<is_integral_v<T>, int> = 0> explicit operator T() const { return v; }
 };
 using Mint1 = ModInt<1'000'000'007>;
 using Mint2 = ModInt<998'244'353>;
@@ -502,6 +503,7 @@ template <u64 M> struct ModInt64 {
   friend bool operator>=(const ModInt64& a, const ModInt64& b) { return a.v >= b.v; }
   friend istream& operator>>(istream& is, ModInt64& a) { i64 x; is >> x; a = ModInt64(x); return is; }
   friend ostream& operator<<(ostream& os, const ModInt64& a) { return os << a.v; }
+  template <class T, enable_if_t<is_integral_v<T>, int> = 0> explicit operator T() const { return v; }
 };
 using M18 = ModInt64<1'000'000'000'000'000'009ULL>;
 
