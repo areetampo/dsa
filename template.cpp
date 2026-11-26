@@ -451,7 +451,7 @@ inline i64 isqrt(i64 n) {
   return x;
 }
 
-// number type that reduces itself: Mint1 a = 5; a = a * 3 / 2; cout << a;   a.v is the raw value
+// number type that reduces itself: Mint1 a = 5; a = a * 3 / 2; cout << a;  a.v is the raw value
 // / and inv() need a prime mod. Mint1 and Mint2 can't be mixed in one expression
 template <u32 M> struct ModInt {
   u32 v;
@@ -469,13 +469,17 @@ template <u32 M> struct ModInt {
   ModInt operator-() const { return ModInt() - *this; }
   friend bool operator==(const ModInt& a, const ModInt& b) { return a.v == b.v; }
   friend bool operator!=(const ModInt& a, const ModInt& b) { return a.v != b.v; }
+  friend bool operator<(const ModInt& a, const ModInt& b) { return a.v < b.v; }
+  friend bool operator>(const ModInt& a, const ModInt& b) { return a.v > b.v; }
+  friend bool operator<=(const ModInt& a, const ModInt& b) { return a.v <= b.v; }
+  friend bool operator>=(const ModInt& a, const ModInt& b) { return a.v >= b.v; }
   friend istream& operator>>(istream& is, ModInt& a) { i64 x; is >> x; a = ModInt(x); return is; }
   friend ostream& operator<<(ostream& os, const ModInt& a) { return os << a.v; }
 };
 using Mint1 = ModInt<1'000'000'007>;
 using Mint2 = ModInt<998'244'353>;
 // 64 bit version of ModInt, for mods that don't fit in 31 bits (up to ~9e18), slower.
-// same usage as Mint1: M18 a = 5; a = a * 3 / 2; cout << a;   / and inv() need a prime mod
+// same usage as Mint1: M18 a = 5; a = a * 3 / 2; cout << a;  / and inv() need a prime mod
 template <u64 M> struct ModInt64 {
   u64 v;
   constexpr ModInt64(i64 x = 0) : v((u64)((x %= (i64)M) < 0 ? x + (i64)M : x)) {}
@@ -492,6 +496,10 @@ template <u64 M> struct ModInt64 {
   ModInt64 operator-() const { return ModInt64() - *this; }
   friend bool operator==(const ModInt64& a, const ModInt64& b) { return a.v == b.v; }
   friend bool operator!=(const ModInt64& a, const ModInt64& b) { return a.v != b.v; }
+  friend bool operator<(const ModInt64& a, const ModInt64& b) { return a.v < b.v; }
+  friend bool operator>(const ModInt64& a, const ModInt64& b) { return a.v > b.v; }
+  friend bool operator<=(const ModInt64& a, const ModInt64& b) { return a.v <= b.v; }
+  friend bool operator>=(const ModInt64& a, const ModInt64& b) { return a.v >= b.v; }
   friend istream& operator>>(istream& is, ModInt64& a) { i64 x; is >> x; a = ModInt64(x); return is; }
   friend ostream& operator<<(ostream& os, const ModInt64& a) { return os << a.v; }
 };
