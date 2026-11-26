@@ -1,12 +1,13 @@
 {
   "configurations": [
     {
-      "name": "windows-gcc-x86",
-      "intelliSenseMode": "windows-gcc-x86",
+      "name": "windows-gcc-x64",
+      "intelliSenseMode": "windows-gcc-x64",
       "compilerPath": "C:\\msys64\\ucrt64\\bin\\g++.exe",
       "cStandard": "${default}",
       "cppStandard": "c++23",
       "includePath": ["${workspaceFolder}/**"],
+      "forcedInclude": ["${workspaceFolder}/.vscode/prelude.h"],
       "defines": ["LOCAL"],
       "browse": {
         "path": ["${workspaceFolder}"],

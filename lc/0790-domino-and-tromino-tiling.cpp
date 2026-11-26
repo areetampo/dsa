@@ -590,11 +590,14 @@ class Solution {
     if (n <= 2) return n;
     if (n == 3) return 5;
 
-    Mint1 back3 = 0, back2 = 1, back1 = 2;
+    Mint1 back3 = 1; // dp[n-3]
+    Mint1 back2 = 2; // dp[n-2]
+    Mint1 back1 = 5; // dp[n-1]
     Mint1 res;
 
     rep(n - 3) {
-      res = back1 + 1 + back2 + 1 + back3 + 1;
+      res = 2 * back1 + back3;
+
       back3 = back2;
       back2 = back1;
       back1 = res;
