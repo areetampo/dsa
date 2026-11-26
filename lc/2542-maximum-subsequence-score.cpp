@@ -541,3 +541,41 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+class Solution {
+  public:
+  long long maxScore(vector<int>& a1, vector<int>& a2, int k) {
+    int n = sz(a1);
+
+    // a2 sorted in inc order with a1 sorted correspondingly to a2's indices
+    // put indices idx[n-k .. n-1] corresponding to a1 in min heap
+    // min is a2[idx[n-k]] and a1[idx[n-k .. n-1]] in min heap form
+    // move left in idx putting a1[idx[n-k-i]] while a2's min being
+    // a2[idx[n-k-i]], remove the top (min of a1) from min heap maintaining size k
+
+    vi idx(n);
+    iota(all(idx), 0);
+    sort(all(idx), [&] (CA a, CA b) {
+      return a2[a] < a2[b];
+    });
+
+    PQG<int> pq;
+    i64 a1_sum = 0, res = lmin;
+
+    fr(i, n - 1, 0) {
+      i64 a2_min = a2[idx[i]];
+      pq.push(a1[idx[i]]);
+      a1_sum += a1[idx[i]];
+
+      while (sz(pq) > k) {
+        a1_sum -= pq.top();
+        pq.pop();
+      }
+
+      if (sz(pq) == k) {
+        smax(res, a1_sum * a2_min);
+      }
+    }
+
+    return res;
+  }
+};
