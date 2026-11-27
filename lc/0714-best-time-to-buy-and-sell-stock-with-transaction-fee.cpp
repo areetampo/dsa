@@ -584,17 +584,71 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * LOGIC: Best Time to Buy and Sell Stock with Transaction Fee
+ *
+ * On any day we are in exactly one of two states:
+ *
+ *   cash = max profit so far if we hold NO stock at the end of day i
+ *   hold = max profit so far if we HOLD a stock at the end of day i
+ *
+ * Transitions for day i:
+ *   cash_new = max(cash, hold + prices[i])
+ *       -> either stay in cash (do nothing), or sell the held stock today
+ *
+ *   hold_new = max(hold, cash_new - prices[i] - fee)
+ *       -> either keep holding, or buy today using our cash
+ *
+ * The fee is paid once per transaction. Here it is charged at BUY time,
+ * so hold already includes the fee. Charging at sell time gives the same answer.
+ *
+ * Base case (day 0):
+ *   cash = 0                      (no stock, no profit)
+ *   hold = -prices[0] - fee       (bought on day 0, fee paid)
+ *
+ * Answer: cash after the last day (ending while holding stock is never better,
+ * since selling only adds prices[i] >= 0 to hold).
+ *
+ * Why the update order is fine:
+ *   hold uses the already-updated cash. That is equivalent to "sell and buy
+ *   on the same day". It can't create fake profit, because a sell followed by
+ *   a buy on the same day nets -fee, so hold never improves from it.
+ *
+ * Complexity: O(n) time, O(1) space.
+ */
 class Solution {
   public:
-  int maxProfit(vector<int>& p, int fee) {
-    int res = 0;
+  int maxProfit(vector<int>& prices, int fee) {
+    int n = sz(prices);
 
-    for (int i = 0, mx = -1e5; i < p.size(); i++) {
-      smax(res, p[i] + mx);
-      int cur = -p[i] - fee;
-      smax(mx, cur);
+    // ---------- O(n) space version (prefix-max DP) ----------
+    // dp[j] = max profit using only the first j days
+    //
+    // vi dp(n + 1, 0);
+    // i64 best = lmin;               // best value of (dp[k] - prices[k] - fee)
+    //                                // over all earlier buy days k
+    // fo(j, 1, n + 1) {
+    //   // best "buy" state: profit before buying on day j-1, minus cost and fee
+    //   smax(best, dp[j - 1] - prices[j - 1] - fee);
+    //
+    //   // either skip day j-1, or sell on it using the best earlier buy
+    //   dp[j] = max(dp[j - 1], best + prices[j - 1]);
+    // }
+    // return dp[n];
+
+    // ---------- O(1) space version (state machine) ----------
+    i64 cash = 0;                      // no stock held, profit so far
+    i64 hold = -prices[0] - fee;       // stock held: bought on day 0, fee paid
+
+    fo(i, 1, n) {
+      // Option 1: stay in cash. Option 2: sell the held stock today.
+      cash = max(cash, hold + prices[i]);
+
+      // Option 1: keep holding. Option 2: buy today from the cash state.
+      hold = max(hold, cash - prices[i] - fee);
     }
 
-    return res;
+    // At the end it is always best to hold nothing.
+    return cash;
   }
 };
