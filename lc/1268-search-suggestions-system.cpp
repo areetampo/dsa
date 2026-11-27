@@ -675,7 +675,8 @@ class Solution {
       it = lower_bound(it, products.end(), cur);
       for (int i = 0; i < 3 && it + i != products.end(); i++) {
         string& s = *(it + i);
-        if (s.find(cur)) break; // search is dead
+        auto x = s.find(cur);
+        if (x == string::npos || x > 0) break;
         suggested.pb(s);
       }
 
