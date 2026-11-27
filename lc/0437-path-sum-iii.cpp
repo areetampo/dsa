@@ -588,28 +588,91 @@ static const int _fast_io = [] () {
 class Solution {
   public:
   int pathSum(TreeNode* root, int t) {
-    vector<pair<TreeNode*, int>> st;
-    UMap<int, int> mp = { { 0, 1 } };
+    if (!root) return 0;
 
-    auto c = root;
-    while (c) {
-      st.pb({ c, c->val + (st.empty() ? 0 : st.back().ss) });
-      mp[st.back().ss]++;
-      c = c->left;
-    }
+    /*
+    The map stores prefix sums on the CURRENT root -> node path.
+
+    With recursion, this is naturally handled like:
+
+        mp[sum]++;
+        dfs(left);
+        dfs(right);
+        mp[sum]--;
+
+    The decrement happens when the recursive call returns, meaning
+    the entire subtree is finished.
+
+    In a normal iterative stack<node, prefix sum from root to node> approach,
+    popping a node did NOT mean its subtree was finished.
+    Its children could still be waiting in the stack,
+    so removing mp[sum] immediately was too early.
+
+    We solve that by putting an explicit "exit" event on the stack.
+    This exit event acts like the point where recursion would return
+    from the node's subtree.
+    */
+
+    // {node, prefix_sum, exit}
+    //
+    // exit = false -> entering the node
+    // exit = true  -> leaving the node
+    stack<tuple<TreeNode*, i64, bool>> st;
+
+    st.push({ root, root->val, false });
+
+    // mp contains prefix sums on the current root -> node path.
+    // {0, 1} allows paths that start directly from the root.
+    UMap<i64, int> mp = { { 0, 1 } };
 
     int res = 0;
 
     while (!st.empty()) {
-      auto [node, sum] = st.back(); st.pop_back();
-      mp[sum]--;
-      if (mp.contains(t - sum)) res += mp[t - sum];
-      node = node->right;
-      while (node) {
-        st.pb({ node, node->val + (st.empty() ? 0 : st.back().ss) });
-        mp[st.back().ss]++;
-        node = node->left;
+      auto [node, sum, exit] = st.top();
+      st.pop();
+
+      // This is equivalent to returning from the recursive call.
+      // The entire subtree is now finished, so this prefix sum
+      // must be removed from the current path.
+      if (exit) {
+        mp[sum]--;
+        continue;
       }
+
+      // We are entering this node.
+      //
+      // If an earlier prefix sum is (sum - t), then:
+      //
+      //     sum - (sum - t) = t
+      //
+      // Therefore every occurrence of (sum - t) gives one
+      // valid path ending at this node.
+      if (mp.contains(sum - t)) res += mp[sum - t];
+
+      // Add this node's prefix sum while processing its subtree.
+      mp[sum]++;
+
+      // We need to remove mp[sum] only AFTER both children
+      // have been completely processed.
+      //
+      // Put the exit event onto the stack BEFORE the children.
+      // Because the stack is LIFO, the children are processed first,
+      // and this exit event runs afterwards.
+      st.push({ node, sum, true });
+
+      if (node->right)
+        st.push({
+            node->right,
+            sum + node->right->val,
+            false
+          });
+
+      if (node->left)
+        st.push({
+            node->left,
+            sum + node->left->val,
+            false
+          });
     }
 
     return res;

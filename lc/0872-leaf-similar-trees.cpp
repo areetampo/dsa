@@ -591,7 +591,7 @@ class Solution {
     stack<TreeNode*> s1, s2;
     s1.push(root1); s2.push(root2);
 
-    function<int(stack<TreeNode*>&)> dfs = [&] (stack<TreeNode*>& s) -> int {
+    function<int(stack<TreeNode*>&)> get_leaf = [&] (stack<TreeNode*>& s) -> int {
       while (true) {
         TreeNode* node = s.top(); s.pop();
         if (node->left) s.push(node->left);
@@ -600,8 +600,10 @@ class Solution {
       }
     };
 
-    while (!s1.empty() && !s2.empty())
-      if (dfs(s1) != dfs(s2)) return false;
+    while (!s1.empty() && !s2.empty()) {
+      if (get_leaf(s1) != get_leaf(s2)) return false;
+    }
+
     return s1.empty() && s2.empty();
   }
 
