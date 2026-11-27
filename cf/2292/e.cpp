@@ -547,5 +547,45 @@ void precomp() {
 void solve() {
   i64 a, x, k; cin >> a >> x >> k;
 
-  
+  i64 cur = a, behind = 0, step = 1, best = a;
+
+  UMap<i64, pii> seen; // gap -> {cur, k}
+
+  while (1) {
+    cur += x;
+
+    if (behind + step < cur) {
+      behind += step;
+      step *= 2;
+      best = cur;
+      continue;
+    }
+
+    if (k == 0 || behind + 1 >= cur) break;
+
+    behind++;
+    step = 2;
+    k--;
+    best = cur;
+
+    i64 gap = cur - behind;
+
+    if (seen.contains(gap)) {
+      auto [prev_cur, prev_k] = seen[gap];
+
+      i64 cycle_len = prev_cur - cur;
+      i64 cycle_k = prev_k - k;
+      i64 jumps = k / cycle_k;
+
+      cur -= jumps * cycle_len;
+      behind -= jumps * cycle_len;
+      k -= jumps * cycle_k;
+
+      seen.clear();
+    } else {
+      seen[gap] = { cur, k };
+    }
+  }
+
+  cout << best << endl;
 }
