@@ -7,12 +7,12 @@ if len(sys.argv) < 2:
     print("Usage: py new.py <problem_name>   (e.g., a  or  x/a)")
     exit()
 
-path_arg = sys.argv[1]
+path_arg = sys.argv[1].replace("\\", "/")
 
 # Split into folder and filename
 if "/" in path_arg:
-  folder, filename = os.path.split(path_arg)
-  os.makedirs(folder, exist_ok=True)
+    folder, filename = os.path.split(path_arg)
+    os.makedirs(folder, exist_ok=True)
 else:
     # No slash: default folder = "dot"
     folder = "dot"
@@ -43,5 +43,12 @@ os.makedirs("tests", exist_ok=True)
 
 print(f"Created: {cpp_path}")
 
-# Open the file in VSCode
-subprocess.run(["code", cpp_path])
+# Open the file in VSCode (never crash if it can't be opened)
+code = shutil.which("code")
+if code:
+    try:
+        subprocess.run([code, cpp_path])
+    except OSError as e:
+        print(f"Could not open VS Code: {e}")
+else:
+    print("'code' not found on PATH; open the file manually.")
