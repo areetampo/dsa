@@ -580,7 +580,7 @@ class Solution {
   public:
   int maxProfit(int k, vector<int>& prices) {
     int n = sz(prices);
-    if (n < 2 || k == 0) return 0;  // can't make any transaction
+    if (n < 2 || k == 0) return 0; // can't make any transaction
 
     // Unlimited case: k is large enough that it never restricts us
     if (k >= n / 2) {
