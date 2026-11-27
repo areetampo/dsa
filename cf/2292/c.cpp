@@ -545,5 +545,15 @@ void precomp() {
 }
 
 void solve() {
+  int n; string s; cin >> n >> s;
 
+  if (n & 1) { yn(0); return; }
+
+  fo(i, 1, n) {
+    if (s[i] == s[i - 1]) {
+      yn(1); return;
+    }
+  }
+
+  yn(0);
 }

@@ -545,5 +545,16 @@ void precomp() {
 }
 
 void solve() {
+  int n; cin >> n; vi L = iv(n), R = iv(n);
 
+  function<i64(int)> f = [&] (int i) -> i64 {
+    if (i == n) return 0;
+
+    i64 r = f(i + 1);
+
+    return max(L[i] - R[i] + r, -r);
+  };
+
+  int sg = sign(f(0));
+  cout << (sg > 0 ? "Sunny" : sg == 0 ? "Draw" : "Aubrey") << endl;
 }

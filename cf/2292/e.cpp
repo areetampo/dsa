@@ -545,5 +545,7 @@ void precomp() {
 }
 
 void solve() {
+  i64 a, x, k; cin >> a >> x >> k;
 
+  
 }
