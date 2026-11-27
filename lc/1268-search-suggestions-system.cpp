@@ -607,7 +607,7 @@ class Solution {
     cur->eow = true;
   }
 
-  vector<vector<string>> suggestedProducts(vector<string>& products, string searchWord) {
+  vector<vector<string>> suggestedProducts_trie(vector<string>& products, string searchWord) {
     root = new TrieNode();
 
     trav(w, products) insert(w);
@@ -658,6 +658,29 @@ class Solution {
       }
     }
 
+    return res;
+  }
+
+  // bin srch approach
+  vector<vector<string>> suggestedProducts(vector<string>& products, string searchWord) {
+    sort(all(products));
+    vector<vs> res;
+    string cur = "";
+    auto it = products.begin();
+
+    trav(c, searchWord) {
+      cur += c;
+      vs suggested;
+
+      it = lower_bound(it, products.end(), cur);
+      for (int i = 0; i < 3 && it + i != products.end(); i++) {
+        string& s = *(it + i);
+        if (s.find(cur)) break; // search is dead
+        suggested.pb(s);
+      }
+
+      res.pb(suggested);
+    }
     return res;
   }
 };
