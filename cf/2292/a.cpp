@@ -545,5 +545,6 @@ void precomp() {
 }
 
 void solve() {
-
+  int l, a, b; cin >> l >> a >> b;
+  cout << l / lcm(gcd(l, a), gcd(l, b)) << endl;
 }

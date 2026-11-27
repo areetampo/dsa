@@ -545,5 +545,19 @@ void precomp() {
 }
 
 void solve() {
+  i64 n, k, p; cin >> n >> k >> p; vi a = iv(n);
 
+  sort(all(a));
+  vi ps = { 0 };
+  trav(i, a) ps.pb(ps.back() + i);
+
+  i64 res = ps.back();
+
+  for (i64 i = 1; i * k <= n; i++) {
+    i64 juice = i * p;
+    i64 berries = ps.back() - ps[i * k];
+    smax(res, juice + berries);
+  }
+
+  cout << res << endl;
 }
