@@ -589,29 +589,70 @@ class Solution {
   int maximumSaleItems(vector<vector<int>>& items, int budget) {
     int n = sz(items);
 
-    vi factor_cnt(1e5 + 1, 0); // factors <= 1e5
+    vi factor_cnt(n + 1, 0);
+
+    // Count how many items have each factor.
     trav(i, items) factor_cnt[i[0]]++;
 
-    vi c2; // cost of items which contribute 2 items (bring a free)
+    vector<pii> c2; // (cost, cnt)
+    // cnt = how many purchases of this item can each contribute 2 items.
 
     trav(i, items) {
       int factor = i[0], cost = i[1];
-      if (factor_cnt[factor] > 1) {
-        c2.pb(cost); continue;
-      }
-      fo(f, factor * 2, 1e5 + 1, factor) {
-        if (factor_cnt[f]) {
-          c2.pb(cost); break;
-        }
-      }
+
+      int cnt = 0;
+
+      // Count all j such that factor[i] divides factor[j].
+      fo(f, factor, n + 1, factor)
+        cnt += factor_cnt[f];
+
+      // -- to exclude j == i.
+      if (--cnt > 0) c2.pb({ cost, cnt });
     }
 
-    // all costs in orig items can be taken can be taken unlimited times contributing 1 item
-    // no unbounded knapsack as only 1 or 2 contribution
-
-    sort(all(c2));
-    sort(all(items), [&] (CA a, CA b) {
+    // Cheapest item for purchases that contribute only 1 item.
+    int mn = (*min_element(
+      all(items),
+      [&] (CA a, CA b) {
       return a[1] < b[1];
-    });
+    }
+    ))[1];
+
+    // Process cheaper 2-item purchases first.
+    sort(all(c2));
+
+    i64 res = budget / mn; // no 2-item purchase
+
+    i64 spent = 0;
+    i64 taken = 0;
+
+    trav(x, c2) {
+      auto [cost, cnt] = x;
+
+      // A 2-item purchase costs at least as much as
+      // buying two cheapest 1-item purchases.
+      // Since later costs are even larger, we can stop.
+      if (cost >= 2ll * mn) break;
+
+      // Take as many of this cost as the remaining budget allows.
+      i64 can_take = min<i64>(
+        cnt,
+        (budget - spent) / cost
+      );
+
+      spent += can_take * cost;
+      taken += can_take;
+
+      // These purchases contribute 2 items each.
+      // The remaining budget is used for 1-item purchases.
+      i64 cur = 2 * taken + (budget - spent) / mn;
+
+      res = max(res, cur);
+
+      // Can't afford even one more purchase of this cost.
+      if (can_take < cnt && (budget - spent) < cost) break;
+    }
+
+    return res;
   }
 };
