@@ -23,10 +23,12 @@ using i128 = i64;
 #endif
 using f32 = float;  using f64 = double;  using f80 = long double;
 
-using vi = vector<i64>;   using vvi = vector<vi>;
-using vb = vector<bool>;  using vc = vector<char>;  using vs = vector<string>;
-using pii = pair<i64, i64>;  using tii = tuple<i64, i64, i64>;
-using vpi = vector<pii>;
+using vi = vector<i64>; using vvi = vector<vi>;
+using vb = vector<bool>; using vvb = vector<vb>;
+using vc = vector<char>; using vvc = vector<vc>;
+using vs = vector<string>; using vvs = vector<vs>;
+using pii = pair<i64, i64>; using vpi = vector<pii>;
+using tii = tuple<i64, i64, i64>;
 
 struct chash {
   static u64 sm(u64 x) {
