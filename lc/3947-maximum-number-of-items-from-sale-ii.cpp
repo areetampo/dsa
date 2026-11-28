@@ -584,75 +584,91 @@ static const int _fast_io = [] () {
 
 /********************************************************/
 
+/*
+ * CORE LOGIC
+ * ----------
+ * 1. For item i, free copies can only come from distinct j != i with factor_i | factor_j.
+ *    Each (i, j) pair gives a free copy at most once, so the first
+ *    cnt_i = (#items j with factor_i | factor_j) - 1 purchases of item i yield 2 items
+ *    (1 bought + 1 free). Any purchase beyond that yields just 1 item.
+ *
+ * 2. cnt_i depends only on factor_i. Precompute mult[f] = number of items whose factor is a
+ *    multiple of f, using a sieve over multiples: O(n log n) total.
+ *    (The old code recomputed this per item -> O(n^2) when all factors are equal.)
+ *
+ * 3. "1-item" purchases: the cheapest item overall (price mn) can be bought unlimited times,
+ *    each giving exactly 1 item.
+ *
+ * 4. "2-item" purchases: (cost, cnt) pairs, each purchase giving 2 items. Only worthwhile
+ *    if cost < 2 * mn (otherwise two cheapest purchases give the same 2 items for less).
+ *    Greedy: sort by cost, take the cheapest first, and spend the leftover on mn purchases.
+ *    Taking a 2-item purchase with cost < 2*mn gains 2 items and loses at most 2 cheap
+ *    purchases, so it never hurts; by exchange argument, cheaper ones go first.
+ *
+ * 5. Answer = max over prefixes of: 2 * taken + (budget - spent) / mn.
+ *
+ * Complexity: O(n log n).
+ */
 class Solution {
   public:
   int maximumSaleItems(vector<vector<int>>& items, int budget) {
     int n = sz(items);
 
+    // factor_cnt[f] = number of items having exactly factor f
     vi factor_cnt(n + 1, 0);
-
-    // Count how many items have each factor.
     trav(i, items) factor_cnt[i[0]]++;
 
-    vector<pii> c2; // (cost, cnt)
-    // cnt = how many purchases of this item can each contribute 2 items.
+    // mult[f] = number of items whose factor is a multiple of f (includes factor f itself).
+    // Computed once per factor via harmonic sum instead of once per item.
+    vi mult(n + 1, 0);
+    fo(f, 1, n + 1) {
+      fo(m, f, n + 1, f) mult[f] += factor_cnt[m];
+    }
+
+    vector<pii> c2; // (cost, cnt): cnt purchases of this cost each give 2 items
 
     trav(i, items) {
       int factor = i[0], cost = i[1];
 
-      int cnt = 0;
-
-      // Count all j such that factor[i] divides factor[j].
-      fo(f, factor, n + 1, factor)
-        cnt += factor_cnt[f];
-
-      // -- to exclude j == i.
-      if (--cnt > 0) c2.pb({ cost, cnt });
+      // -1 to exclude j == i (an item can't give a free copy of itself)
+      i64 cnt = mult[factor] - 1;
+      if (cnt > 0) c2.pb({ cost, cnt });
     }
 
-    // Cheapest item for purchases that contribute only 1 item.
-    int mn = (*min_element(
-      all(items),
-      [&] (CA a, CA b) {
-      return a[1] < b[1];
-    }
-    ))[1];
+    // Cheapest price: used for plain 1-item purchases
+    int mn = INT_MAX;
+    trav(i, items) mn = min(mn, i[1]);
 
-    // Process cheaper 2-item purchases first.
+    // Process cheaper 2-item purchases first
     sort(all(c2));
 
-    i64 res = budget / mn; // no 2-item purchase
+    i64 res = budget / mn; // baseline: no 2-item purchase
 
-    i64 spent = 0;
-    i64 taken = 0;
+    i64 spent = 0; // money spent on 2-item purchases
+    i64 taken = 0; // number of 2-item purchases made
 
     trav(x, c2) {
       auto [cost, cnt] = x;
 
-      // A 2-item purchase costs at least as much as
-      // buying two cheapest 1-item purchases.
-      // Since later costs are even larger, we can stop.
+      // A 2-item purchase costing >= 2*mn is no better than two cheapest purchases.
+      // Costs are sorted, so everything after is worse too.
       if (cost >= 2ll * mn) break;
 
-      // Take as many of this cost as the remaining budget allows.
-      i64 can_take = min<i64>(
-        cnt,
-        (budget - spent) / cost
-      );
+      // Take as many of this cost as the remaining budget and the free-copy limit allow
+      i64 can_take = min<i64>(cnt, (budget - spent) / cost);
 
       spent += can_take * cost;
       taken += can_take;
 
-      // These purchases contribute 2 items each.
-      // The remaining budget is used for 1-item purchases.
+      // 2 items per 2-item purchase + leftover budget spent on the cheapest item
       i64 cur = 2 * taken + (budget - spent) / mn;
-
       res = max(res, cur);
 
-      // Can't afford even one more purchase of this cost.
-      if (can_take < cnt && (budget - spent) < cost) break;
+      // Couldn't even afford all available copies at this cost -> later (pricier) ones
+      // can't be afforded either
+      if (can_take < cnt) break;
     }
 
-    return res;
+    return (int)res;
   }
 };
